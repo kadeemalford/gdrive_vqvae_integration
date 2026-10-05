@@ -1,0 +1,61 @@
+{
+  "fold_by_group": {
+    "doped/5m LSF": 1,
+    "doped/5m SMF": 2,
+    "doped/5m i29": 0,
+    "multicore/C1 and C2": 0,
+    "multicore/C1 and C3": 1,
+    "multicore/C1 and C4": 2,
+    "multicore/C2 and C3": 3,
+    "multicore/C2 and C4": 0,
+    "multimode/Configuration 5": 0,
+    "multimode/Configuration 6": 1,
+    "multimode/Configuration 7": 2,
+    "single_mode/Configuration 1": 0,
+    "single_mode/Configuration 10": 1,
+    "single_mode/Configuration 11": 2,
+    "single_mode/Configuration 12": 3,
+    "single_mode/Configuration 2": 1,
+    "single_mode/Configuration 3": 2,
+    "single_mode/Configuration 4": 3,
+    "single_mode/Configuration 5": 0,
+    "single_mode/Configuration 6": 1,
+    "single_mode/Configuration 7": 2,
+    "single_mode/Configuration 8": 3,
+    "single_mode/Configuration 9": 0
+  },
+  "folds": 4,
+  "groups_by_family": {
+    "doped": [
+      "doped/5m i29",
+      "doped/5m LSF",
+      "doped/5m SMF"
+    ],
+    "multicore": [
+      "multicore/C1 and C2",
+      "multicore/C1 and C3",
+      "multicore/C1 and C4",
+      "multicore/C2 and C3",
+      "multicore/C2 and C4"
+    ],
+    "multimode": [
+      "multimode/Configuration 5",
+      "multimode/Configuration 6",
+      "multimode/Configuration 7"
+    ],
+    "single_mode": [
+      "single_mode/Configuration 1",
+      "single_mode/Configuration 2",
+      "single_mode/Configuration 3",
+      "single_mode/Configuration 4",
+      "single_mode/Configuration 5",
+      "single_mode/Configuration 6",
+      "single_mode/Configuration 7",
+      "single_mode/Configuration 8",
+      "single_mode/Configuration 9",
+      "single_mode/Configuration 10",
+      "single_mode/Configuration 11",
+      "single_mode/Configuration 12"
+    ]
+  }
+}

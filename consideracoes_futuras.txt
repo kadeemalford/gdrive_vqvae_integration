@@ -1,0 +1,2 @@
+- essembler e MOs (mix of specialists)
+- os dados do transfer learning sao semelhantes aos que eu tenho, isso nao seria benefico? alem disso usar metadados como input de amostra de treinamento seria valido?

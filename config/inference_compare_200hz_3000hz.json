@@ -1,0 +1,11 @@
+{
+  "repo_root": "/home/murilo-barroso/source/smartgrids",
+  "checkpoint": "models/febus_finetune_base/best.pt",
+  "model_time_samples": 1024,
+  "device": "cuda",
+  "display_vmin": -2000.0,
+  "display_vmax": 2000.0,
+  "fft_fmin_hz": 100.0,
+  "fft_fmax_hz": 10000.0,
+  "files": []
+}

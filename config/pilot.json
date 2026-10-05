@@ -1,0 +1,57 @@
+{
+  "repo_root": "/home/murilo-barroso/source/smartgrids",
+  "checkpoint": "/home/murilo-barroso/source/smartgrids/runs/vqvae_512ch/best.pt",
+  "data_type": "auto",
+  "channels": 512,
+  "time_samples": 1024,
+  "default_dt_s": 0.00005,
+  "windows_per_file": 3,
+  "normalization": "per-sample",
+  "device": "cpu",
+  "files": [
+    {
+      "id": "1-H318ey-yOiyBM-vp_jm7sm2wT2zgRdb",
+      "title": "Copy of 200Hz.h5",
+      "logical_path": "SMF Configurations/Configuration 1",
+      "group": "smf_configuration_1",
+      "frequency_hz": 200
+    },
+    {
+      "id": "1SNltDf341F6ho-IrasXKkGCnnkO6Hfks",
+      "title": "Copy of 10000Hz.h5",
+      "logical_path": "SMF Configurations/Configuration 1",
+      "group": "smf_configuration_1",
+      "frequency_hz": 10000
+    },
+    {
+      "id": "12yWMkz0-hCqTrXkSf3aCKS1wDwH8HJJa",
+      "title": "Copy of 1000Hz.h5",
+      "logical_path": "NP-doped Fiber/5m SMF",
+      "group": "np_doped_smf",
+      "frequency_hz": 1000
+    },
+    {
+      "id": "1gPxKphGsQACr6l3cD-54Q9LR8cNO3Aa6",
+      "title": "Copy of 1000Hz.h5",
+      "logical_path": "NP-doped Fiber/5m i29",
+      "group": "np_doped_i29",
+      "frequency_hz": 1000
+    },
+    {
+      "id": "1GVPpuHPD9dSXZ8AIvZpYgWARyPf2OvI_",
+      "title": "Copy of 1000Hz_CH1.h5",
+      "logical_path": "Multimode Fiber/C1 and C2",
+      "group": "multimode_c1_c2",
+      "channel": "CH1",
+      "frequency_hz": 1000
+    },
+    {
+      "id": "120apaZ_hDt5KUYh4yDZzIoiH88tAK9ma",
+      "title": "Copy of 1000Hz_CH2.h5",
+      "logical_path": "Multimode Fiber/C1 and C2",
+      "group": "multimode_c1_c2",
+      "channel": "CH2",
+      "frequency_hz": 1000
+    }
+  ]
+}

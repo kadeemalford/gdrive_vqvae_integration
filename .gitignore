@@ -1,0 +1,63 @@
+# Local datasets and generated artifacts. Keep small, reproducible fold manifests.
+/data/*
+!/data/manifests/
+/results/
+/models/
+
+# Large data / model files, including copies outside the usual directories.
+*.h5
+*.hdf5
+*.hdf
+*.npz
+*.npy
+*.pt
+*.pth
+*.ckpt
+*.safetensors
+
+# Python environments, caches and build artifacts.
+.venv/
+venv/
+env/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.cache/
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
+build/
+dist/
+*.egg-info/
+.ipynb_checkpoints/
+
+# Local configuration and credentials. Templates remain versionable.
+.env
+.env.*
+!.env.example
+!.env.*.example
+client_secret*.json
+token*.json
+credentials.json
+service_account*.json
+service-account*.json
+*.pem
+*.key
+
+# Runtime logs and temporary/editor/OS files.
+*.log
+*.tmp
+*.temp
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# Intentionally tracked: config/, data/manifests/, progress_reports/, tests/,
+# README.md, Makefile, requirements.txt and .env.example.

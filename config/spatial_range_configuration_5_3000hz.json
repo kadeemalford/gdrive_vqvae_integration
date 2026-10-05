@@ -1,0 +1,29 @@
+{
+  "repo_root": "/home/murilo-barroso/source/smartgrids",
+  "checkpoint": "models/febus_finetune_base/best.pt",
+  "data_type": "auto",
+  "time_samples": 40000,
+  "model_time_samples": 1024,
+  "source_time_offset": 500,
+  "source_block_samples": 20000,
+  "spatial_start_m": 20.0,
+  "spatial_end_m": 130.0,
+  "source_distance_start_m": 20.0,
+  "source_distance_end_m": 130.0,
+  "normalization": "per-time-chunk",
+  "device": "cuda",
+  "display_vmin": -2000.0,
+  "display_vmax": 2000.0,
+  "fft_fmin_hz": 100.0,
+  "fft_fmax_hz": 10000.0,
+  "files": [
+    {
+      "id": "1qpXl6at62aQHLqnennmK-WDn3hpe_UmH",
+      "title": "Copy of 3000Hz.h5",
+      "local_filename": "smf_configuration_5__3000Hz.h5",
+      "logical_path": "SMF Configurations/Configuration 5",
+      "group": "smf_configuration_5",
+      "frequency_hz": 3000
+    }
+  ]
+}

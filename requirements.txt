@@ -1,0 +1,8 @@
+h5py
+matplotlib
+numpy
+torch
+tqdm
+gdown
+google-api-python-client
+google-auth-oauthlib

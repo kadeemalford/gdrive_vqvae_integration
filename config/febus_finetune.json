@@ -1,0 +1,19 @@
+{
+  "drive_root_id": "1jva8yckEpxpEj-G3zk9LnlS-ux4mheDx",
+  "checkpoint": "models/febus_finetune_base/best.pt",
+  "repo_root": "/home/murilo-barroso/source/smartgrids",
+  "folds": 4,
+  "time_samples": 1000,
+  "windows_per_block": 20,
+  "fine_tune_epochs": 10,
+  "fine_tune_learning_rate": 0.00001,
+  "fine_tune_weight_decay": 0.00001,
+  "early_stopping_patience": 3,
+  "early_stopping_min_delta": 0.0005,
+  "families": {
+    "SMF Configurations": "single_mode",
+    "Multimode Fiber": "multimode",
+    "Multicore Fiber": "multicore",
+    "NP-doped Fiber": "doped"
+  }
+}

@@ -1,0 +1,35 @@
+{
+  "repo_root": "/home/murilo-barroso/source/smartgrids",
+  "checkpoint": "/home/murilo-barroso/source/smartgrids/runs/vqvae_512ch/best.pt",
+  "data_type": "auto",
+  "time_samples": 1024,
+  "default_dt_s": 0.00005,
+  "normalization": "per-time-chunk",
+  "device": "cpu",
+  "files": [
+    {
+      "id": "1-H318ey-yOiyBM-vp_jm7sm2wT2zgRdb",
+      "title": "Copy of 200Hz.h5",
+      "local_filename": "smf_configuration_1__200Hz.h5",
+      "logical_path": "SMF Configurations/Configuration 1",
+      "group": "smf_configuration_1",
+      "frequency_hz": 200
+    },
+    {
+      "id": "1SNltDf341F6ho-IrasXKkGCnnkO6Hfks",
+      "title": "Copy of 10000Hz.h5",
+      "local_filename": "smf_configuration_1__10000Hz.h5",
+      "logical_path": "SMF Configurations/Configuration 1",
+      "group": "smf_configuration_1",
+      "frequency_hz": 10000
+    },
+    {
+      "id": "1gPxKphGsQACr6l3cD-54Q9LR8cNO3Aa6",
+      "title": "Copy of 1000Hz.h5",
+      "local_filename": "np_doped_i29__1000Hz.h5",
+      "logical_path": "NP-doped Fiber/5m i29",
+      "group": "np_doped_i29",
+      "frequency_hz": 1000
+    }
+  ]
+}
