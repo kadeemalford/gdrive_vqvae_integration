@@ -25,6 +25,10 @@ FINETUNE_RESUME ?=
 FINETUNE_SAMPLING ?= window
 FINETUNE_STEPS_PER_EPOCH ?= 0
 FINETUNE_OUTPUT_DIR ?= results/fine_tune_results/fold_$(FINETUNE_TEST_FOLD)
+FINETUNE_SPECTRAL_WEIGHT ?= 0
+FINETUNE_VALIDATION_DETAILS ?= 0
+FINETUNE_VAL_SAMPLES_PER_FILE ?= 0
+FINETUNE_EVALUATE_INITIAL ?= 0
 
 # Local execution settings. Command-line assignments take precedence.
 -include .env
@@ -97,7 +101,7 @@ finetune-prepare:
 	@$(PYTHON) finetuning/prepare_finetune_samples.py --raw-dir $(FINETUNE_DIR)/raw --output-dir $(FINETUNE_DIR)/fold_$(FINETUNE_TEST_FOLD) --test-fold $(FINETUNE_TEST_FOLD) --val-fold $(FINETUNE_VAL_FOLD)
 
 finetune-train:
-	@$(PYTHON) finetuning/finetune_vqvae.py --repo-root $(FINETUNE_REPO_ROOT) --checkpoint $(FINETUNE_CHECKPOINT) --samples-dir $(FINETUNE_DIR)/fold_$(FINETUNE_TEST_FOLD) --output-dir $(FINETUNE_OUTPUT_DIR) --epochs $(FINETUNE_EPOCHS) --learning-rate $(FINETUNE_LR) --max-train-samples $(FINETUNE_MAX_TRAIN_SAMPLES) --max-val-samples $(FINETUNE_MAX_VAL_SAMPLES) --early-stopping-patience $(FINETUNE_EARLY_STOPPING_PATIENCE) --early-stopping-min-delta $(FINETUNE_EARLY_STOPPING_MIN_DELTA) --sampling $(FINETUNE_SAMPLING) --steps-per-epoch $(FINETUNE_STEPS_PER_EPOCH) $(if $(FINETUNE_RESUME),--resume $(FINETUNE_RESUME))
+	@$(PYTHON) finetuning/finetune_vqvae.py --repo-root $(FINETUNE_REPO_ROOT) --checkpoint $(FINETUNE_CHECKPOINT) --samples-dir $(FINETUNE_DIR)/fold_$(FINETUNE_TEST_FOLD) --output-dir $(FINETUNE_OUTPUT_DIR) --epochs $(FINETUNE_EPOCHS) --learning-rate $(FINETUNE_LR) --max-train-samples $(FINETUNE_MAX_TRAIN_SAMPLES) --max-val-samples $(FINETUNE_MAX_VAL_SAMPLES) --early-stopping-patience $(FINETUNE_EARLY_STOPPING_PATIENCE) --early-stopping-min-delta $(FINETUNE_EARLY_STOPPING_MIN_DELTA) --sampling $(FINETUNE_SAMPLING) --steps-per-epoch $(FINETUNE_STEPS_PER_EPOCH) --spectral-weight $(FINETUNE_SPECTRAL_WEIGHT) --val-samples-per-file $(FINETUNE_VAL_SAMPLES_PER_FILE) $(if $(filter 1,$(FINETUNE_VALIDATION_DETAILS)),--validation-details) $(if $(filter 1,$(FINETUNE_EVALUATE_INITIAL)),--evaluate-initial) $(if $(FINETUNE_RESUME),--resume $(FINETUNE_RESUME))
 
 finetune-evaluate:
 	@$(PYTHON) finetuning/evaluate_checkpoints.py --repo-root $(FINETUNE_REPO_ROOT) --samples-dir $(FINETUNE_DIR)/fold_$(FINETUNE_TEST_FOLD)/test --checkpoint base=$(FINETUNE_CHECKPOINT) --checkpoint finetuned=$(FINETUNE_OUTPUT_DIR)/best.pt --output-dir $(FINETUNE_OUTPUT_DIR)/evaluation

@@ -1,0 +1,18 @@
+{
+  "repo_root": "/home/murilo-barroso/source/smartgrids",
+  "checkpoint": "models/febus_finetune_base/best.pt",
+  "model_time_samples": 1000,
+  "device": "cuda",
+  "display_vmin": -2000.0,
+  "display_vmax": 2000.0,
+  "fft_fmin_hz": 100.0,
+  "fft_fmax_hz": 10000.0,
+  "extraction_configs": [
+    "config/spatial_range_pilot.json",
+    "config/spatial_range_configuration_5_3000hz.json"
+  ],
+  "files": [
+    {"local_filename": "smf_configuration_1__200Hz.h5", "frequency_hz": 200},
+    {"local_filename": "smf_configuration_5__3000Hz.h5", "frequency_hz": 3000}
+  ]
+}

@@ -15,6 +15,11 @@ from pathlib import Path
 import numpy as np
 import torch
 
+try:
+    from .latent_geometry import require_standard_geometry
+except ImportError:
+    from latent_geometry import require_standard_geometry
+
 
 def load(path: Path):
     with np.load(path, allow_pickle=False) as payload:
@@ -70,6 +75,7 @@ def main() -> int:
     models = {}
     for label, path_text in specs:
         checkpoint, config = load_checkpoint_config(Path(path_text), device)
+        require_standard_geometry(checkpoint)
         models[label] = build_model(config, checkpoint, device)
     rows = []
     totals: dict[str, dict[str, list[float]]] = defaultdict(lambda: defaultdict(list))

@@ -67,6 +67,9 @@ def main() -> int:
     parser.add_argument("--config", type=Path, required=True)
     parser.add_argument("--raw-dir", type=Path, default=Path("data/raw"))
     parser.add_argument("--output-dir", type=Path, default=Path("data/samples"))
+    parser.add_argument("--manifest-output", type=Path, default=Path("results/manifests/extracted_samples.json"))
+    parser.add_argument("--drop-nonfinite-channels", action="store_true",
+                        help="Remove only entirely nonfinite channels; require a contiguous finite channel map")
     args = parser.parse_args()
     config = json.loads(args.config.read_text())
     time_samples = int(config.get("time_samples", 1024))
@@ -97,6 +100,17 @@ def main() -> int:
                 print(f"[extract] skipped incompatible: {path}, reconstructed timeline={data.shape[2]}")
                 continue
             data = data[:, :, :time_samples]
+            retained = np.arange(data.shape[1])
+            removed = np.array([], dtype=int)
+            if args.drop_nonfinite_channels:
+                keep = np.isfinite(data).any(axis=(0, 2))
+                removed = retained[~keep]
+                retained = retained[keep]
+                if not retained.size or np.any(np.diff(retained) != 1):
+                    raise ValueError("Plotting pipeline requires a nonempty contiguous retained channel map")
+                data = data[:, keep, :]
+                if not np.isfinite(data).all():
+                    raise ValueError("Partially nonfinite channels require an explicit missing-data codec")
             metadata = {
                 **item,
                 "sample_id": path.stem,
@@ -117,6 +131,8 @@ def main() -> int:
                 "start_channel": start_channel,
                 "end_channel": end_channel,
                 "normalization": "none",
+                "retained_source_channel_indices": (retained + start_channel).tolist(),
+                "removed_nonfinite_source_channel_indices": (removed + start_channel).tolist(),
             }
             for key, value in dataset.parent.attrs.items():
                 if key in {"Spacing", "Origin", "Extent", "GaugeLength", "BlockRate", "SamplingRate"}:
@@ -129,13 +145,14 @@ def main() -> int:
                 metadata["dt_s"] = float(spacing[1]) * 1e-3
             if origin.size >= 1 and extent.size >= 2 and spacing.size >= 1:
                 metadata["distance_start_m"] = float(origin[0] + extent[0] * spacing[0])
-                metadata["distance_end_m"] = float(origin[0] + extent[1] * spacing[0])
+                metadata["distance_start_m"] += float((start_channel + retained[0]) * spacing[0])
+                metadata["distance_end_m"] = metadata["distance_start_m"] + float((data.shape[1]-1) * spacing[0])
         sample_path = args.output_dir / f"{path.stem}.npz"
         np.savez_compressed(sample_path, data=data, metadata_json=json.dumps(metadata, sort_keys=True))
         manifest.append({"sample_path": str(sample_path), **metadata})
         print(f"[extract] complete: {sample_path} ({variable}, {data.shape[1]} channels x {data.shape[2]} samples)")
 
-    manifest_path = Path("results/manifests/extracted_samples.json")
+    manifest_path = args.manifest_output
     manifest_path.parent.mkdir(parents=True, exist_ok=True)
     manifest_path.write_text(json.dumps(manifest, indent=2, sort_keys=True))
     print(f"[extract] success: wrote {len(manifest)} window(s) and {manifest_path}")

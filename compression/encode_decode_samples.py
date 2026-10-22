@@ -8,6 +8,7 @@ import csv
 import json
 import math
 import sys
+import struct
 from pathlib import Path
 
 import numpy as np
@@ -16,10 +17,38 @@ import torch
 
 def load_model(repo_root: Path, checkpoint_path: Path, device: torch.device):
     sys.path.insert(0, str(repo_root))
-    from vqvae.evaluate_vqvae import build_model, load_checkpoint_config
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+    from vqvae.evaluate_vqvae import load_checkpoint_config
+    from finetuning.model_factory import build_model
 
     checkpoint, config = load_checkpoint_config(checkpoint_path, device)
-    return build_model(config, checkpoint, device), config
+    policy = checkpoint.get("finetune", {}).get("normalization", "per-time-chunk")
+    if policy not in ("per-time-chunk", "escape-v1", "robust-escape-v1"):
+        raise ValueError(f"Unsupported inference normalization: {policy}")
+    return build_model(config, checkpoint, device), {
+        **config, "inference_normalization": policy, "checkpoint_epoch": checkpoint.get("epoch")
+    }
+
+
+def prepare_chunk(raw, policy):
+    """Return normalized values and the reversible side information for one chunk."""
+    if policy == "per-time-chunk":
+        values, mean, std = normalize(raw)
+        return values, struct.pack("<dd", mean, std)
+    from finetuning.reversible_normalization import encode
+    from finetuning.robust_escape import encode_robust
+    if policy not in ("escape-v1", "robust-escape-v1"):
+        raise ValueError(f"Unsupported inference normalization: {policy}")
+    packet = encode_robust(raw) if policy == "robust-escape-v1" else encode(raw)
+    return packet.values, packet.side_stream
+
+
+def restore_chunk(values, side, policy):
+    if policy == "per-time-chunk":
+        mean, std = struct.unpack("<dd", side)
+        return (values * (std + 1e-6) + mean).astype(np.float32)
+    from finetuning.reversible_normalization import decode
+    return decode(values, side)
 
 
 def normalize(array: np.ndarray) -> tuple[np.ndarray, float, float]:
@@ -80,6 +109,7 @@ def main() -> int:
     device = torch.device(args.device or config.get("device", "cpu"))
     checkpoint_path = args.checkpoint or Path(config["checkpoint"])
     model, model_config = load_model(Path(config["repo_root"]), checkpoint_path, device)
+    policy = model_config["inference_normalization"]
     chunk_size = int(config.get("model_time_samples", config.get("time_samples", 1024)))
     args.output_dir.mkdir(parents=True, exist_ok=True)
     rows: list[dict[str, object]] = []
@@ -99,16 +129,20 @@ def main() -> int:
 
             reconstruction = np.empty_like(raw)
             index_chunks: list[np.ndarray] = []
+            side_chunks = []
+            chunk_rows = []
             for block_index in range(raw.shape[0]):
                 for start in range(0, raw.shape[2], chunk_size):
                     end = min(start + chunk_size, raw.shape[2])
-                    prepared, mean, std = normalize(raw[block_index, :, start:end])
+                    prepared, side = prepare_chunk(raw[block_index, :, start:end], policy)
                     tensor = torch.from_numpy(prepared).unsqueeze(0).unsqueeze(0).to(device)
                     recon_norm, indices = encode_and_decode(model, tensor)
-                    reconstruction[block_index, :, start:end] = (
-                        recon_norm[0, 0].cpu().numpy().astype(np.float32) * (std + 1e-6) + mean
-                    )
+                    reconstruction[block_index, :, start:end] = restore_chunk(
+                        recon_norm[0, 0].cpu().numpy().astype(np.float32), side, policy)
                     index_chunks.append(indices.cpu().numpy().astype(np.uint16).reshape(-1))
+                    side_chunks.append(side)
+                    chunk_rows.append({"block": block_index, "start": start, "end": end,
+                                       "indices": int(indices.numel()), "side_bytes": len(side)})
 
             reconstruction[~np.isfinite(raw)] = np.nan
             error = raw - reconstruction
@@ -120,7 +154,10 @@ def main() -> int:
             output_metadata = {
                 **metadata,
                 "model_config": model_config,
-                "normalization": "per-time-chunk",
+                "normalization": policy,
+                "latent_geometry": getattr(model, "latent_geometry", "standard"),
+                "checkpoint": str(checkpoint_path.resolve()),
+                "chunks": chunk_rows,
                 "model_time_samples": chunk_size,
             }
             np.savez_compressed(
@@ -129,6 +166,7 @@ def main() -> int:
                 recon=reconstruction,
                 error=error,
                 indices=codes,
+                side_stream=np.frombuffer(b"".join(side_chunks), dtype=np.uint8),
                 metadata_json=json.dumps(output_metadata, sort_keys=True),
             )
             rows.append({
@@ -145,6 +183,11 @@ def main() -> int:
                 "index_bytes": int(codes.nbytes),
                 "theoretical_ratio": float(raw.nbytes / max(codes.nbytes, 1)),
                 "num_codes": int(np.unique(codes).size),
+                "num_indices": int(codes.size),
+                "fixed_index_bits": int(codes.size * math.ceil(math.log2(model.num_embeddings))),
+                "side_bytes": sum(map(len, side_chunks)),
+                "index_plus_side_nominal_ratio": float(32 * raw.size / (
+                    codes.size * math.ceil(math.log2(model.num_embeddings)) + 8 * sum(map(len, side_chunks)))),
             })
             print(f"[reconstruct] complete: {output_path} (correlation={rows[-1]['correlation']:.4f}, rmse={rmse:.4g})")
 
@@ -159,7 +202,7 @@ def main() -> int:
     (args.metrics_dir / "summary.json").write_text(json.dumps({
         "num_files": len(rows),
         "checkpoint": str(checkpoint_path),
-        "normalization": "per-time-chunk",
+        "normalization": policy,
         "model_time_samples": chunk_size,
         "model_config": model_config,
     }, indent=2, sort_keys=True))

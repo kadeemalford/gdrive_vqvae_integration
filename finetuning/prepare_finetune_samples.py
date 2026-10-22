@@ -11,6 +11,11 @@ from pathlib import Path
 import h5py
 import numpy as np
 
+try:
+    from .channel_geometry import select_spatial, map_identifier
+except ImportError:
+    from channel_geometry import select_spatial, map_identifier
+
 
 def choose_dataset(handle: h5py.File) -> tuple[str, h5py.Dataset]:
     found: list[tuple[str, h5py.Dataset]] = []
@@ -55,10 +60,15 @@ def main() -> int:
     args = parser.parse_args()
     if args.test_fold == args.val_fold:
         raise ValueError("test and validation folds must differ")
+    if min(args.time_samples, args.windows_per_block, args.max_channels) < 1:
+        raise ValueError("Window length/count and channel limit must be positive")
+    if args.output_dir.exists() and any(args.output_dir.iterdir()):
+        raise FileExistsError("Use a new/empty preparation directory; existing data is preserved")
     with args.manifest.open(newline="") as stream:
         rows = list(csv.DictReader(stream))
     manifest_rows: list[dict[str, object]] = []
     counts = {"train": 0, "val": 0, "test": 0}
+    channel_maps = {}
     for row in rows:
         source = args.raw_dir / f"{row['drive_id']}.h5"
         if not source.exists():
@@ -68,14 +78,14 @@ def main() -> int:
             dataset_name, dataset = choose_dataset(handle)
             source_blocks = blocks(dataset)
             spacing = np.asarray(dataset.parent.attrs.get("Spacing", []), dtype=float).reshape(-1)
+            attributes = {key: dataset.parent.attrs[key] for key in ("Spacing", "Origin", "Extent") if key in dataset.parent.attrs}
         for block_index, block in enumerate(source_blocks):
-            finite_channels = np.flatnonzero(np.isfinite(block).all(axis=1))
-            block = block[finite_channels]
-            if block.shape[0] == 0 or block.shape[1] < args.time_samples:
+            spatial, mapping = select_spatial(block, args.max_channels, attributes)
+            if spatial.shape[0] == 0 or spatial.shape[1] < args.time_samples:
                 continue
-            channel_count = min(args.max_channels, block.shape[0])
-            channel_start = max(0, (block.shape[0] - channel_count) // 2)
-            spatial = block[channel_start:channel_start + channel_count]
+            mapping = {"drive_id": row["drive_id"], "dataset": dataset_name, "block_index": block_index, **mapping}
+            map_id = map_identifier(mapping)
+            channel_maps[map_id] = {"channel_map_id": map_id, **mapping}
             starts = np.linspace(0, spatial.shape[1] - args.time_samples, num=args.windows_per_block, dtype=int)
             for window_index, start in enumerate(np.unique(starts)):
                 sample = spatial[:, start:start + args.time_samples]
@@ -83,14 +93,19 @@ def main() -> int:
                 destination = args.output_dir / split / name
                 destination.parent.mkdir(parents=True, exist_ok=True)
                 metadata = {**row, "split": split, "dataset": dataset_name, "block_index": block_index, "time_start": int(start), "channels": int(sample.shape[0]), "time_samples": int(sample.shape[1]), "dt_s": float(spacing[1]) * 1e-3 if spacing.size >= 2 else None, "dx_m": float(spacing[0]) if spacing.size else None}
+                metadata.update(channel_map_id=map_id, channel_map_version=1, spatial_rows_contiguous=mapping["selected_rows_contiguous"])
                 np.savez_compressed(destination, data=sample, metadata_json=json.dumps(metadata, sort_keys=True))
                 manifest_rows.append({"sample_path": str(destination), **metadata})
                 counts[split] += 1
     manifest_path = args.output_dir / "samples_manifest.csv"
+    args.output_dir.mkdir(parents=True, exist_ok=True)
     with manifest_path.open("w", newline="") as stream:
         writer = csv.DictWriter(stream, fieldnames=list(manifest_rows[0]) if manifest_rows else ["sample_path"])
         writer.writeheader()
         writer.writerows(manifest_rows)
+    with (args.output_dir / "channel_maps.jsonl").open("w") as stream:
+        for map_id in sorted(channel_maps):
+            stream.write(json.dumps(channel_maps[map_id], sort_keys=True, allow_nan=False) + "\n")
     print(f"[finetune-prepare] success: train={counts['train']} val={counts['val']} test={counts['test']} -> {args.output_dir}")
     return 0
 

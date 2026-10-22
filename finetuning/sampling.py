@@ -31,6 +31,17 @@ def epoch_paths(paths: list[Path], groups: dict, mode: str, steps: int, rng=rand
             rng.shuffle(batch)
             result.extend(batch)
         return result[:steps]
+    if mode == "family-window":
+        # Equal family dose, retaining within-family window weighting. This is
+        # not family-group balancing, which also changes configuration weights.
+        families = sorted({key[0] for key in groups})
+        if not families or steps % len(families):
+            raise ValueError("Family-window requires a budget divisible by family count")
+        by_family = {family: sorted(path for key, values in groups.items() if key[0] == family for path in values)
+                     for family in families}
+        batches = {family: epoch_paths(values, {}, "window", steps // len(families), rng)
+                   for family, values in by_family.items()}
+        return [batches[family][index] for index in range(steps // len(families)) for family in families]
     keys = sorted(groups)
     if mode == "group":
         return [rng.choice(groups[rng.choice(keys)]) for _ in range(steps)]
