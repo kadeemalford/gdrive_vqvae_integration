@@ -35,7 +35,7 @@ class PreparationGeometryTests(unittest.TestCase):
             manifest.write_text("drive_id,family,configuration,fold,title\nid,doped,one,2,example.h5\n")
             output = root / "prepared"
             argv = ["prepare", "--manifest", str(manifest), "--raw-dir", str(raw_dir), "--output-dir", str(output),
-                    "--time-samples", "4", "--windows-per-block", "2", "--max-channels", "3"]
+                    "--time-samples", "4", "--windows-per-block", "2", "--max-channels", "3", "--spatial-band-policy", "none"]
             with patch.object(sys, "argv", argv), contextlib.redirect_stdout(io.StringIO()):
                 self.assertEqual(main(), 0)
             maps = [json.loads(line) for line in (output / "channel_maps.jsonl").read_text().splitlines()]

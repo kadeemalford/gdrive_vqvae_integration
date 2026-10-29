@@ -29,7 +29,7 @@ class ArtifactPruningTests(unittest.TestCase):
             manifest.write_text("drive_id,family,configuration,fold,title\nid,doped,one,2,example.h5\n")
             folder = root / "data/finetune/fold_0"
             args = ["prepare", "--manifest", str(manifest), "--raw-dir", str(raw_dir), "--output-dir", str(folder),
-                    "--time-samples", "4", "--windows-per-block", "2"]
+                    "--time-samples", "4", "--windows-per-block", "2", "--spatial-band-policy", "none"]
             with patch.object(sys, "argv", args), contextlib.redirect_stdout(io.StringIO()):
                 prepare()
             samples = sorted((folder / "train").glob("*.npz"))

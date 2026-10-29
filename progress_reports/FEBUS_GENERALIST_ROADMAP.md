@@ -22,6 +22,9 @@ não ao roadmap.
 - **Reconstrução não é denoising:** preservar também o ruído presente no alvo.
   Não filtrar, fazer clipping ou descartar componentes para facilitar a tarefa
   sem declarar explicitamente uma mudança de objetivo.
+  A seleção declarada da região espacial útil é anterior a esse alvo: registrar
+  canais excluídos, coordenadas, regra versionada e incerteza da máscara automática.
+  Preservar os brutos e não contabilizar redução de cobertura como compressão neural.
 - **Rastreabilidade física:** distinguir variável/unidade, sample rate, espaçamento,
   gauge length, canais e duração. Strain, strain rate e OOI `dphi` não são alvos
   intercambiáveis; forma em pixels semelhante não implica domínio semelhante.
@@ -35,6 +38,12 @@ não ao roadmap.
   máscaras, parâmetros de normalização e mecanismos de escape no codec completo.
 
 ### Direcionamento da comparação neural
+
+A seleção espacial deve ser preparada e auditada antes dos controles e treinos,
+mantendo a mesma regra/cobertura entre braços. Em corpus com tiles separados,
+declarar sua ponderação para não equiparar um resto de um canal a uma região de
+512 canais. Avaliação do codec deve reconstruir os vetores discretos exatos a
+partir dos índices, sem depender de resíduos numéricos do straight-through.
 
 A decisão estrutural é comparar **A) arquitetura nativa com inicialização offshore,
 B) mesma arquitetura com inicialização aleatória e C) arquitetura orientada a
@@ -124,6 +133,9 @@ tenham atendido aos critérios de produção.
 | [Relatório 58 — confirmação do objetivo por canal](58-CHANNEL_OBJECTIVE_FOLD_CONFIRMATION_RESULTS.md) | Redução de p90 contra controle nos seis grupos, mas nenhum snapshot preserva todos os critérios no fold 1. | Não promover resultado positivo de um fold a política generalista; registrar confirmação negativa sem retunar pesos ou tolerâncias. |
 | [Relatório 59 — registro de referências 4x](59-GENERALIST_RESEARCH_REFERENCE_REGISTRY.md) | Checkpoints disponíveis/hashes verificados, guarda retrospectiva e fronteira por componentes em coortes compatíveis. | Distinguir referência de pesquisa de modelo final, computações históricas de comparações causais e redes por fold de um único codec validado externamente. |
 | [Checkpoint de progresso 1](PROGRESS_CHECKPOINT_1.md) | Síntese dos relatórios 1–59, dos ganhos de reconstrução e do custo em densidade latente/bitrate; detalhes da mudança de direcionamento neural. | Usar o histórico como controle para uma comparação neural estrutural, sem confundir aumento de informação transmitida com eficiência de representação; testar CNN/atenção sem impor OWR. |
+| [Relatório 62 — corpus corrigido e comparação A/B/C](62-SPATIAL_CORPUS_AND_CONTROLLED_NEURAL_COMPARISON.md) | Auditoria integral do corpus espacial, arquitetura fatorizada multiescala, replay discreto exato, controle de memória e protocolo em duas taxas. | Separar cobertura, inicialização, capacidade, taxa e compute; usar orçamento limitado com extensão por convergência e avaliação por configuração/canal, sem promoção por média isolada. |
+| [Relatório 63 — resultados e confirmação](63-SPATIAL_ABC_RESULTS_AND_FOLD_CONFIRMATION.md) | Transferência liderou as duas taxas na coorte inicial; guardas não autorizaram promoção e scratch utilizou menos códigos. | Confirmar em outra rotação/configuração antes de acrescentar atenção ou mudar loss/quantizador; manter referência histórica compatível com os novos papéis de treino/validação. |
+| [Relatório 64 — confirmação concluída](64-CROSS_FOLD_CONFIRMATION_RESULTS.md) | Transferência voltou a liderar, mas ganhos macro coexistem com regressões por arquivo/configuração. | Priorizar validação física e tolerâncias de aplicação; não abrir nova busca arquitetural nem promover por média isolada. |
 
 ## 3. Etapas e entregáveis
 

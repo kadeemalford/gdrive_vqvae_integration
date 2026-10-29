@@ -17,6 +17,7 @@ import numpy as np
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 from finetuning.physical_validation import ordinary_fidelity
+from finetuning.spatial_band_filter import POLICY, DEFAULTS
 
 
 def sha256(path):
@@ -85,10 +86,12 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--output-dir", type=Path, required=True)
     parser.add_argument("--config", type=Path, default=Path("config/offshore_vs_4x_raw.json"))
+    parser.add_argument("--spatial-band-policy", choices=("none", POLICY), default="none")
     args = parser.parse_args()
     output = args.output_dir.resolve()
     output.mkdir(parents=True, exist_ok=False)
     config = json.loads(args.config.read_text())
+    config["spatial_band_policy"] = args.spatial_band_policy
     config_path = output / "config.json"
     config_path.write_text(json.dumps(config, indent=2)+"\n")
     checkpoints = {
@@ -107,13 +110,25 @@ def main():
         "scope": "Two requested single-mode files; known historical held-out configurations of fold 0, not new independent acquisitions or a generalist acceptance test.",
         "comparison": "Same extracted float32 data and 1000-sample chunk boundaries; each model uses checkpoint-native normalization and geometry. Not rate matched.",
         "nonfinite_policy": "Remove entirely nonfinite channels identically before both models, preserving source channel indices. Reject partial missingness or noncontiguous retained maps.",
+        "spatial_band_policy": args.spatial_band_policy,
+        "spatial_band_parameters": DEFAULTS if args.spatial_band_policy != "none" else {},
         "rate": "Nominal fixed-width indices + saved normalization/escape side only. NPZ uint16 storage and whole archive sizes are separate; no entropy codec/model/container overhead included.",
     }
     (output / "protocol.json").write_text(json.dumps(protocol, indent=2)+"\n")
     for i, source_config in enumerate(config["extraction_configs"]):
         run("acquisition/extract_febus_windows.py", "--config", source_config,
             "--output-dir", output / "samples", "--manifest-output", output / f"extraction_{i}.json",
-            "--drop-nonfinite-channels")
+            "--drop-nonfinite-channels", "--spatial-band-policy", args.spatial_band_policy)
+    samples = sorted((output / "samples").glob("*.npz"))
+    coverage = []
+    for path in samples:
+        with np.load(path, allow_pickle=False) as packet:
+            meta = json.loads(str(packet["metadata_json"].item()))
+            coverage.append({"sample": path.name, "file": meta["local_filename"],
+                             "channels": meta["channels"], "time_samples": meta["time_samples"],
+                             "distance_start_m": meta["distance_start_m"], "distance_end_m": meta["distance_end_m"],
+                             "removed_excessive_source_channel_indices": meta.get("removed_excessive_source_channel_indices", [])})
+    (output / "coverage.json").write_text(json.dumps(coverage, indent=2)+"\n")
     summaries = {}
     for label, checkpoint in checkpoints.items():
         folder = output / label
@@ -127,16 +142,16 @@ def main():
             "--recon-dir", folder / "reconstructions", "--output-dir", folder / "figures",
             "--summary", folder / "metrics/reconstruction_summary.csv")
         with (folder / "metrics/per_sample_metrics.csv").open() as stream:
-            summaries[label] = {row["file_name"]: row for row in csv.DictReader(stream)}
+            summaries[label] = {Path(row["source_sample"]).name: row for row in csv.DictReader(stream)}
     figures = output / "comparison_figures"
     figures.mkdir()
     rows = []
-    for item in config["files"]:
-        stem = Path(item["local_filename"]).stem
+    for sample in samples:
+        stem = sample.stem
         physical = compare_arrays([output / label / "reconstructions" / f"{stem}.npz" for label in checkpoints], figures, stem)
         for (label, checkpoint), metrics in zip(checkpoints.items(), physical):
-            record = summaries[label][item["local_filename"]]
-            rows.append({"file": item["local_filename"], "model": label,
+            record = summaries[label][sample.name]
+            rows.append({"file": record["file_name"], "sample": sample.name, "model": label,
                          **{key: record[key] for key in ("correlation", "rmse_relative", "rmse", "num_indices",
                             "fixed_index_bits", "side_bytes", "index_plus_side_nominal_ratio", "normalization", "latent_geometry")},
                          **metrics})
@@ -147,8 +162,12 @@ def main():
     (output / "comparison.json").write_text(json.dumps(rows, indent=2)+"\n")
     report = ["# Inferência pareada: offshore original × FEBUS 4×", "",
               "Sem treinamento. Mesmos recortes e chunks de 1.000 amostras; normalização/geometria próprias de cada checkpoint.",
-              "200 Hz: 545 canais finitos, 3 s, 20–128,8 m; 3.000 Hz: 111 canais, 2 s, 20–130 m. Sample rate: 20 kHz.",
-              "Seis canais inteiramente não finitos (índices 545–550 do arquivo de 200 Hz) são removidos igualmente; mapa original preservado nos metadados.", "",
+              f"Política espacial: `{args.spatial_band_policy}`. Seleção idêntica para os dois modelos, antes da normalização; detalhes em coverage.json e samples/*.spatial_filter.json.",
+              "Os checkpoints são históricos, treinados antes da nova seleção espacial; esta execução não mede adaptação ao alvo corrigido.", "",
+              "## Cobertura", ""]
+    for item in coverage:
+        report.append(f"- {item['sample']}: {item['channels']} canais, {item['time_samples']} amostras, {item['distance_start_m']:.1f}–{item['distance_end_m']:.1f} m; {len(item['removed_excessive_source_channel_indices'])} canais fonte excluídos por amplitude.")
+    report += ["", "## Métricas", "",
               "| Arquivo | Modelo | Correlação | RMSE relativo (RMS bruto) | RMSE relativo centrado | p90 por canal | Compressão nominal |",
               "|---|---|---:|---:|---:|---:|---:|"]
     for row in rows:
@@ -158,6 +177,7 @@ def main():
                "- Métricas calculadas em todas as amostras dos recortes; não são as médias macro por família dos estudos de desenvolvimento.",
                "- O RMSE relativo da pipeline usa RMS bruto como denominador; o RMSE centrado e o p90 por canal estão em comparison.csv.",
                "- Taxa nominal: índices a 11 bits + side. Arquivos NPZ guardam índices uint16 e outros dados de diagnóstico; seu tamanho não é a taxa nominal.",
+               "- A base da taxa é o sinal retido. Exclusão de cobertura não é ganho de compressão neural; metadados do mapa espacial não estão incluídos nesta taxa parcial.",
                "- As duas configurações pertencem ao fold 0 reservado; já houve inspeções históricas. Esta comparação não é validação externa independente nem promoção generalista.",
                "- Extração mantém [500:20500] de cada bloco e concatena os trechos. FFT de todo o recorte pode refletir emendas; não implica continuidade física auditada nas junções.",
                "- Figuras pareadas usam a mesma escala e canal escolhido só pelo original. Decimação é apenas visual; não altera inferência ou métricas.",

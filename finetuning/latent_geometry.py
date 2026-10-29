@@ -50,6 +50,17 @@ def apply_geometry(model, policy):
         return model
     if not all(hasattr(model, key) for key in ("encoder", "decoder", "downsample_levels")):
         raise ValueError("Temporal geometry requires native encoder/decoder")
+    if hasattr(model, "configure_latent_geometry"):
+        spatial, temporal = CHANGES[policy]
+        if model.downsample_levels < max(spatial, temporal):
+            raise ValueError("Unsupported geometry/downsample levels")
+        model.configure_latent_geometry(spatial, temporal)
+        extra = spatial_padding(policy, model.downsample_levels)
+        if extra:
+            model._geometry_padding_hook = model.encoder.register_forward_pre_hook(
+                lambda module, inputs: (F.pad(inputs[0], (0, 0, 0, extra)),))
+        model.latent_geometry = policy
+        return model
     down = [m for m in model.encoder.modules() if isinstance(m, torch.nn.Conv2d) and m.kernel_size == (4, 4) and m.stride[0] in (1, 2)]
     up = [m for m in model.decoder.modules() if isinstance(m, torch.nn.ConvTranspose2d) and m.kernel_size == (4, 4) and m.stride[0] in (1, 2)]
     spatial, temporal = CHANGES[policy]

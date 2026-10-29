@@ -12,9 +12,11 @@ import h5py
 import numpy as np
 
 try:
-    from .channel_geometry import select_spatial, map_identifier
+    from .channel_geometry import select_spatial, map_identifier, spatial_metadata
+    from .spatial_band_filter import POLICY, DEFAULTS, detect_spatial_bands, retained_regions
 except ImportError:
-    from channel_geometry import select_spatial, map_identifier
+    from channel_geometry import select_spatial, map_identifier, spatial_metadata
+    from spatial_band_filter import POLICY, DEFAULTS, detect_spatial_bands, retained_regions
 
 
 def choose_dataset(handle: h5py.File) -> tuple[str, h5py.Dataset]:
@@ -57,6 +59,7 @@ def main() -> int:
     parser.add_argument("--time-samples", type=int, default=1000)
     parser.add_argument("--windows-per-block", type=int, default=20)
     parser.add_argument("--max-channels", type=int, default=512)
+    parser.add_argument("--spatial-band-policy", choices=("none", POLICY), default=POLICY)
     args = parser.parse_args()
     if args.test_fold == args.val_fold:
         raise ValueError("test and validation folds must differ")
@@ -69,6 +72,7 @@ def main() -> int:
     manifest_rows: list[dict[str, object]] = []
     counts = {"train": 0, "val": 0, "test": 0}
     channel_maps = {}
+    decisions = {}
     for row in rows:
         source = args.raw_dir / f"{row['drive_id']}.h5"
         if not source.exists():
@@ -79,26 +83,44 @@ def main() -> int:
             source_blocks = blocks(dataset)
             spacing = np.asarray(dataset.parent.attrs.get("Spacing", []), dtype=float).reshape(-1)
             attributes = {key: dataset.parent.attrs[key] for key in ("Spacing", "Origin", "Extent") if key in dataset.parent.attrs}
+        decision = detect_spatial_bands(source_blocks) if args.spatial_band_policy != "none" else None
+        if decision:
+            decisions[row["drive_id"]] = decision
         for block_index, block in enumerate(source_blocks):
-            spatial, mapping = select_spatial(block, args.max_channels, attributes)
-            if spatial.shape[0] == 0 or spatial.shape[1] < args.time_samples:
-                continue
-            mapping = {"drive_id": row["drive_id"], "dataset": dataset_name, "block_index": block_index, **mapping}
-            map_id = map_identifier(mapping)
-            channel_maps[map_id] = {"channel_map_id": map_id, **mapping}
-            starts = np.linspace(0, spatial.shape[1] - args.time_samples, num=args.windows_per_block, dtype=int)
-            for window_index, start in enumerate(np.unique(starts)):
-                sample = spatial[:, start:start + args.time_samples]
-                name = f"{row['drive_id']}_b{block_index:02d}_w{window_index:02d}.npz"
-                destination = args.output_dir / split / name
-                destination.parent.mkdir(parents=True, exist_ok=True)
-                metadata = {**row, "split": split, "dataset": dataset_name, "block_index": block_index, "time_start": int(start), "channels": int(sample.shape[0]), "time_samples": int(sample.shape[1]), "dt_s": float(spacing[1]) * 1e-3 if spacing.size >= 2 else None, "dx_m": float(spacing[0]) if spacing.size else None}
-                metadata.update(channel_map_id=map_id, channel_map_version=1, spatial_rows_contiguous=mapping["selected_rows_contiguous"])
-                np.savez_compressed(destination, data=sample, metadata_json=json.dumps(metadata, sort_keys=True))
-                manifest_rows.append({"sample_path": str(destination), **metadata})
-                counts[split] += 1
+            if decision:
+                selections = [(block[indices], spatial_metadata(indices, block.shape[0], attributes))
+                              for indices in retained_regions(block, decision, args.max_channels)]
+            else:
+                selections = [select_spatial(block, args.max_channels, attributes)]
+            for region_index, (spatial, mapping) in enumerate(selections):
+                if spatial.shape[0] == 0 or spatial.shape[1] < args.time_samples:
+                    continue
+                mapping = {"drive_id": row["drive_id"], "dataset": dataset_name, "block_index": block_index, **mapping}
+                if decision:
+                    mapping.update(spatial_filter_id=decision["filter_id"], spatial_band_policy=POLICY)
+                map_id = map_identifier(mapping)
+                channel_maps[map_id] = {"channel_map_id": map_id, **mapping}
+                starts = np.linspace(0, spatial.shape[1] - args.time_samples, num=args.windows_per_block, dtype=int)
+                for window_index, start in enumerate(np.unique(starts)):
+                    sample = spatial[:, start:start + args.time_samples]
+                    suffix = f"_r{region_index:03d}" if decision else ""
+                    name = f"{row['drive_id']}_b{block_index:02d}{suffix}_w{window_index:02d}.npz"
+                    destination = args.output_dir / split / name
+                    destination.parent.mkdir(parents=True, exist_ok=True)
+                    metadata = {**row, "split": split, "dataset": dataset_name, "block_index": block_index, "time_start": int(start), "channels": int(sample.shape[0]), "time_samples": int(sample.shape[1]), "dt_s": float(spacing[1]) * 1e-3 if spacing.size >= 2 else None, "dx_m": float(spacing[0]) if spacing.size else None}
+                    metadata.update(channel_map_id=map_id, channel_map_version=1, spatial_rows_contiguous=mapping["selected_rows_contiguous"])
+                    if decision:
+                        metadata.update(spatial_band_policy=POLICY, spatial_filter_id=decision["filter_id"], spatial_region_index=region_index)
+                    np.savez_compressed(destination, data=sample, metadata_json=json.dumps(metadata, sort_keys=True))
+                    manifest_rows.append({"sample_path": str(destination), **metadata})
+                    counts[split] += 1
     manifest_path = args.output_dir / "samples_manifest.csv"
     args.output_dir.mkdir(parents=True, exist_ok=True)
+    (args.output_dir / "preprocessing.json").write_text(json.dumps({
+        "spatial_band_policy": args.spatial_band_policy,
+        "parameters": DEFAULTS if decisions else {}, "file_decisions": decisions,
+        "note": "Coverage selection before normalization; contiguous retained regions tiled separately. Raw HDF5 unchanged."
+    }, indent=2, allow_nan=False)+"\n")
     with manifest_path.open("w", newline="") as stream:
         writer = csv.DictWriter(stream, fieldnames=list(manifest_rows[0]) if manifest_rows else ["sample_path"])
         writer.writeheader()

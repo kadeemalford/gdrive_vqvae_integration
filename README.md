@@ -154,7 +154,55 @@ ao RMS bruto do RMSE centrado e das caudas por canal. A compressão nominal cobr
 índices e side, não o tamanho dos NPZ de diagnóstico nem todos os custos de um
 codec implantado. A comparação não é à mesma taxa nem validação externa independente.
 
+Esse runner preserva a seleção histórica (`none`) por padrão. Para repetir a
+comparação com o filtro espacial novo, use um diretório novo e a opção explícita:
+
+```bash
+.venv/bin/python compression/compare_raw_inference.py \
+  --spatial-band-policy persistent-amplitude-v1 \
+  --output-dir results/inference_results/offshore_vs_4x_filtered_new_run
+```
+
 ## Fine-Tuning FEBUS
+
+### Seleção espacial antes da normalização
+
+Novas execuções de `acquisition/extract_febus_windows.py` e
+`finetuning/prepare_finetune_samples.py` usam por padrão
+`persistent-amplitude-v1`: amplitude robusta por canal, excesso de 8× a mediana
+espacial em pelo menos 80% das janelas observadas, mínimo de quatro janelas e
+dois canais adjacentes. Há proteção contra perda de mais de 25% dos canais
+observados. Picos isolados não determinam a exclusão. A máscara é uma heurística
+de cobertura, não um indicador físico validado.
+
+O filtro atua antes da normalização, não modifica os HDF5 e não altera valores
+dos canais retidos. Regiões separadas são salvas/processadas separadamente, com
+mapas físicos. A preparação de treino divide regiões longas em tiles sem
+descartar o restante por crop central. Use diretórios novos; arrays preparados
+antigos não são filtrados automaticamente. Para reproduzir a preparação legada,
+adicione `--spatial-band-policy none`.
+
+```bash
+.venv/bin/python acquisition/extract_febus_windows.py \
+  --config config/spatial_range_pilot.json \
+  --output-dir data/new_spatial_samples \
+  --manifest-output results/manifests/new_spatial_samples.json
+
+.venv/bin/python finetuning/prepare_finetune_samples.py \
+  --output-dir data/finetune/spatial_band_v1_fold_0
+```
+
+Checkpoints novos registram a política; mudar cobertura exige um ramo novo de
+adaptação, não resume silencioso do experimento antigo. A regra funciona offline,
+com estatísticas do próprio arquivo; não garante preservação de eventos fortes
+que persistam por quase toda a gravação. Ver
+[relatório 61](progress_reports/61-PERSISTENT_SPATIAL_BAND_FILTER.md).
+
+O corpus espacial auditado e a comparação A/B/C em dois orçamentos de índices
+estão no [relatório 62](progress_reports/62-SPATIAL_CORPUS_AND_CONTROLLED_NEURAL_COMPARISON.md).
+O runner `finetuning/run_spatial_abc_study.py` registra protocolo, status, decisões
+de extensão e avaliações completas; não acessa o teste para inferência nem promove
+um modelo final automaticamente.
 
 O fine-tuning fica inteiramente neste repositório e reutiliza somente a arquitetura de `smartgrids`. A cópia local imutável do checkpoint-base fica em `models/febus_finetune_base/best.pt`; checkpoints ajustados são gravados em `results/fine_tune_results/`. O manifesto do Drive inclui apenas HDF5 brutos `Copy of ...h5`; saídas `*_output.h5` e `*_fft_output.h5` são excluídas porque duplicam ou derivam dos brutos.
 

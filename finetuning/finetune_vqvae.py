@@ -150,6 +150,8 @@ def main() -> int:
     parser.add_argument("--latent-geometry", choices=POLICIES, help="Versioned stride/rate allocation; inherits source/resume metadata by default. Spatial policies add decoder-cropped bottom padding.")
     parser.add_argument("--codebook-diagnostics", action="store_true", help="Record epoch code usage/perplexity and train reconstruction/VQ losses.")
     parser.add_argument("--channel-diagnostics", action="store_true", help="Include robust channel statistics in physical validation.")
+    parser.add_argument("--spatial-weighted-validation", action="store_true",
+                        help="Weight retained spatial tiles by cells within configuration; keep equal configuration/family macro weights")
     parser.add_argument("--codebook-refresh", choices=("none", "dead-v1"), default="none",
                         help="Optional train-only bounded refresh after an epoch; never during validation.")
     parser.add_argument("--domain-family", choices=FAMILIES,
@@ -206,6 +208,12 @@ def main() -> int:
         val_paths = sorted(selection_rng.sample(val_paths, args.max_val_samples))
     if not train_paths or not val_paths:
         raise ValueError("Both train and val sample directories must be non-empty")
+    preprocessing_path = args.samples_dir / "preprocessing.json"
+    preprocessing = {"spatial_band_policy": "none", "parameters": {}}
+    if preprocessing_path.is_file():
+        preparation = json.loads(preprocessing_path.read_text())
+        preprocessing = {"spatial_band_policy": preparation["spatial_band_policy"],
+                         "parameters": preparation["parameters"]}
     metadata = None
     if args.validation_details or args.val_samples_per_file:
         metadata = validation_metadata(val_paths, args.samples_dir / "samples_manifest.csv")
@@ -223,7 +231,8 @@ def main() -> int:
         raise ValueError("Temporal latent geometry requires physical-validation/rate accounting")
     transform = partial(restore_for_validation, policy=args.normalization, model=model,
                         detailed_channels=args.channel_diagnostics) if args.physical_validation else None
-    detailed_evaluator = partial(evaluate_detailed, load_valid_mask=mask_loader, fidelity_transform=transform)
+    detailed_evaluator = partial(evaluate_detailed, load_valid_mask=mask_loader, fidelity_transform=transform,
+                                 spatial_weighting=args.spatial_weighted_validation)
     trainable_parameters = configure_trainable(model, args.trainable)
     optimizer = torch.optim.AdamW(trainable_parameters, lr=args.learning_rate, weight_decay=args.weight_decay)
     refresh = CodebookRefresh(model, optimizer, args.seed) if args.codebook_refresh == "dead-v1" else None
@@ -245,6 +254,10 @@ def main() -> int:
     if args.resume:
         resumed = torch.load(args.resume, map_location=device, weights_only=False)
         saved_state = resumed.get("finetune", {})
+        if saved_state.get("spatial_weighted_validation",False) != args.spatial_weighted_validation:
+            raise ValueError("Resume must retain spatial validation weighting")
+        if saved_state.get("preprocessing", {"spatial_band_policy": "none", "parameters": {}}) != preprocessing:
+            raise ValueError("Resume must retain spatial preprocessing; start a fresh branch to change coverage")
         saved_geometry = checkpoint_geometry(resumed)
         if saved_state.get("domain_family") != args.domain_family:
             raise ValueError("Resume must retain domain family")
@@ -312,8 +325,10 @@ def main() -> int:
                 "channel_mse_weight": args.channel_mse_weight, "channel_weight_cap": CHANNEL_WEIGHT_CAP,
                 "evaluate_initial": args.evaluate_initial,
                 "normalization": args.normalization,
+                "preprocessing": preprocessing,
                 "trainable": args.trainable, "early_stopping_metric": args.early_stopping_metric,
                 "physical_validation": args.physical_validation,
+                "spatial_weighted_validation": args.spatial_weighted_validation,
                 "latent_geometry": args.latent_geometry,
                 "codebook_diagnostics": args.codebook_diagnostics, "channel_diagnostics": args.channel_diagnostics,
                 "codebook_refresh": args.codebook_refresh,

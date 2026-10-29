@@ -5,11 +5,16 @@ from __future__ import annotations
 
 import argparse
 import json
+import sys
 from pathlib import Path
 from typing import Any
 
 import h5py
 import numpy as np
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from finetuning.spatial_band_filter import POLICY, detect_spatial_bands, contiguous_regions
+from finetuning.channel_geometry import spatial_metadata
 
 
 def dataset_candidates(handle: h5py.File) -> list[tuple[str, h5py.Dataset]]:
@@ -62,6 +67,44 @@ def spatial_indices(config: dict[str, Any], channels: int) -> tuple[int, int, fl
     return start, end, requested_start, requested_end
 
 
+def write_filtered_regions(full_data, data, start_channel, attributes, metadata, output):
+    """Apply the file-local detector before normalization; never concatenate gaps."""
+    decision = detect_spatial_bands(full_data)
+    mask = np.isfinite(data).all(axis=(0, 2))
+    for index in decision["removed_source_channel_indices"]:
+        local = index-start_channel
+        if 0 <= local < len(mask):
+            mask[local] = False
+    regions = contiguous_regions(mask)
+    stem = metadata["sample_id"]
+    if list(output.glob(f"{stem}*.npz")) or (output/f"{stem}.spatial_filter.json").exists():
+        raise FileExistsError("Filtered extraction requires fresh outputs for this source")
+    if not regions:
+        raise ValueError("No finite spatial region remains")
+    (output/f"{stem}.spatial_filter.json").write_text(json.dumps(decision, indent=2, allow_nan=False)+"\n")
+    rows = []
+    for number, indices in enumerate(regions):
+        selected = data[:, indices, :]
+        mapping = spatial_metadata(indices+start_channel, full_data.shape[1], attributes)
+        name = stem if len(regions)==1 else f"{stem}_r{number:03d}"
+        meta = {**metadata, "sample_id": name, "channels": len(indices),
+                "shape_sample": list(selected.shape), "spatial_band_policy": POLICY,
+                "spatial_filter_id": decision["filter_id"], "spatial_filter_status": decision["status"],
+                "spatial_region_index": number, "spatial_rows_contiguous": True,
+                "retained_source_channel_indices": mapping["source_channel_indices"],
+                "removed_excessive_source_channel_indices": decision["removed_source_channel_indices"],
+                "excluded_nonfinite_source_channel_indices": (np.flatnonzero(~np.isfinite(data).all(axis=(0,2)))+start_channel).tolist(),
+                "start_channel": int(indices[0]+start_channel), "end_channel": int(indices[-1]+start_channel+1),
+                "channel_map": mapping}
+        if mapping["metadata_positions_m"] is not None:
+            meta["distance_start_m"] = mapping["metadata_positions_m"][0]
+            meta["distance_end_m"] = mapping["metadata_positions_m"][-1]
+        path = output/f"{name}.npz"
+        np.savez_compressed(path, data=selected, metadata_json=json.dumps(meta, sort_keys=True))
+        rows.append({"sample_path": str(path), **meta})
+    return rows
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--config", type=Path, required=True)
@@ -70,8 +113,13 @@ def main() -> int:
     parser.add_argument("--manifest-output", type=Path, default=Path("results/manifests/extracted_samples.json"))
     parser.add_argument("--drop-nonfinite-channels", action="store_true",
                         help="Remove only entirely nonfinite channels; require a contiguous finite channel map")
+    parser.add_argument("--spatial-band-policy", choices=("none", POLICY),
+                        help="Overrides config; defaults to persistent-amplitude-v1 for new extractions")
     args = parser.parse_args()
     config = json.loads(args.config.read_text())
+    band_policy = args.spatial_band_policy or config.get("spatial_band_policy", POLICY)
+    if band_policy not in ("none", POLICY):
+        raise ValueError("Unknown spatial band policy")
     time_samples = int(config.get("time_samples", 1024))
     time_offset = int(config.get("source_time_offset", 0))
     source_block_samples = int(config.get("source_block_samples", time_samples))
@@ -102,7 +150,7 @@ def main() -> int:
             data = data[:, :, :time_samples]
             retained = np.arange(data.shape[1])
             removed = np.array([], dtype=int)
-            if args.drop_nonfinite_channels:
+            if args.drop_nonfinite_channels and band_policy == "none":
                 keep = np.isfinite(data).any(axis=(0, 2))
                 removed = retained[~keep]
                 retained = retained[keep]
@@ -147,6 +195,12 @@ def main() -> int:
                 metadata["distance_start_m"] = float(origin[0] + extent[0] * spacing[0])
                 metadata["distance_start_m"] += float((start_channel + retained[0]) * spacing[0])
                 metadata["distance_end_m"] = metadata["distance_start_m"] + float((data.shape[1]-1) * spacing[0])
+            if band_policy != "none":
+                attributes = {key: dataset.parent.attrs[key] for key in ("Spacing", "Origin", "Extent") if key in dataset.parent.attrs}
+                rows = write_filtered_regions(full_data, data, start_channel, attributes, metadata, args.output_dir)
+                manifest.extend(rows)
+                print(f"[extract] filtered: {path.name} -> {len(rows)} contiguous region(s), {sum(row['channels'] for row in rows)} retained channels")
+                continue
         sample_path = args.output_dir / f"{path.stem}.npz"
         np.savez_compressed(sample_path, data=data, metadata_json=json.dumps(metadata, sort_keys=True))
         manifest.append({"sample_path": str(sample_path), **metadata})

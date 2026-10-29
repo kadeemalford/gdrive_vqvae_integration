@@ -1,5 +1,12 @@
 # PROGRESS CHECKPOINT 1 — Reconstrução generalista FEBUS
 
+Atualização posterior: a confirmação A/B/C concluiu em 28/10/2026. Transferência
+liderou novamente (RMSE/correlação **0,416764 / 0,904839**, razão nominal 40,367×),
+mas regressões por configuração/canal impedem promoção. O
+[relatório 64](64-CROSS_FOLD_CONFIRMATION_RESULTS.md) consolida ambos os folds e
+o diagnóstico pareado; a prioridade passa à aceitação física, não a outra busca
+aberta de arquitetura.
+
 Síntese dos **relatórios 1–59**, cobrindo a investigação de transferência do
 VQ-VAE DAS offshore para doped, multicore, multimode e single-mode. Resultados
 são de desenvolvimento; não há modelo final promovido ou validação externa.
@@ -102,6 +109,48 @@ Seus ciclos filtrados/alinhados e latente contínuo não demonstram nossa taxa/f
 
 ## Mudança fundamental de direcionamento recomendada
 
+### Prioridade anterior à comparação: selecionar a região espacial útil
+
+Adotou-se, por orientação do responsável pelo projeto, a premissa de que as
+faixas de amplitude exorbitante correspondem a ponta/reflexão ou canais fora
+da fibra útil. A [auditoria de 24 arquivos](60-RANDOM_DRIVE_SPATIAL_ENERGY_BANDS.md)
+confirmou que a concentração espacial não é exclusiva dos exemplos iniciais,
+mas sua ocorrência e posição variam entre famílias/configurações.
+
+Foi implementada a política compartilhada **`persistent-amplitude-v1`** para
+novas preparações de treino e extrações de inferência, antes da normalização:
+amplitude robusta por canal, excesso relativo persistente em várias janelas,
+faixas adjacentes e proteção contra exclusão excessiva. Picos pontuais não são
+um critério de remoção. Valores retidos permanecem inalterados, mapas físicos
+são preservados e regiões separadas não são concatenadas espacialmente.
+Critérios, validação em 26 arquivos e limitações estão no
+[relatório 61](61-PERSISTENT_SPATIAL_BAND_FILTER.md).
+
+Sem mapa físico, a máscara é **heurística**, não prova de invalidade de cada
+canal. O limiar inicial é conservador e não elimina todas as regiões que apenas
+concentram energia. Dados históricos preparados não foram substituídos. A sequência
+de dependências é:
+
+**Preparar/auditar a cobertura útil → diagnóstico pareado dos controles →
+adaptação em ramo novo → comparação A/B/C no mesmo corpus corrigido.**
+
+O [relatório 62](62-SPATIAL_CORPUS_AND_CONTROLLED_NEURAL_COMPARISON.md) registra
+o avanço: corpus corrigido preparado e auditado integralmente, candidata C
+implementada/testada e fila A/B/C em duas taxas com orçamento limitado,
+controles congelados e avaliações completas. Estado de execução e resultados
+ficam nos artefatos referenciados nesse relatório, sem promoção final automática.
+A comparação foi concluída: A liderou as duas taxas (densa: **0,4452 RMSE /
+0,8881 correlação**; compacta: **0,6676 / 0,7277**), mas nenhum selecionado final
+passou todas as guardas aplicáveis. O [relatório 63](63-SPATIAL_ABC_RESULTS_AND_FOLD_CONFIRMATION.md)
+consolida os trade-offs e define confirmação A/B/C somente na taxa densa em
+outra rotação de configurações/seed, sem modificar objetivo, quantizador ou filtro.
+
+Resultados anteriores continuam descrevendo o alvo e o pré-processamento antigos.
+Recalcular fidelidade e bits no sinal retido, reportando a cobertura excluída:
+retirar canais inválidos não pode ser contabilizado como ganho neural de compressão.
+
+### Comparação de representação neural
+
 **Deixar de presumir o fine-tuning offshore como solução e comparar eficiência
 de representação neural no corpus FEBUS.** O modelo offshore permanece como
 controle, não restrição. Os relatórios 21–24 já testaram scratch em outro regime;
@@ -123,7 +172,9 @@ troca uma convolução de cada bloco residual por uma 1×9 dilatada, preservando
 topologia geral ([factory local](../finetuning/model_factory.py)). C deve explicitar
 mudanças além disso: blocos fatorizados espacial/temporal, contexto multiescala
 antes do gargalo e desenho independente de redução/reconstrução dos eixos.
-São hipóteses a especificar e testar, não uma rede nova pronta derivada do PDF.
+Essas diferenças foram concretizadas em `anisotropic-multiscale-v1`
+([relatório 62](62-SPATIAL_CORPUS_AND_CONTROLLED_NEURAL_COMPARISON.md)); sua
+superioridade permanece hipótese experimental, não resultado derivado do PDF.
 
 Para C, evitar tratar eixos canal/tempo como intercambiáveis. Capturar contexto
 temporal maior e relações espaciais apenas onde contiguidade/topologia forem
@@ -134,7 +185,9 @@ as 512×1.000 amostras seria custosa; operar em tokens reduzidos ou eixos fatori
 **Condições para um experimento que realmente decida o caminho:**
 
 1. Mesmo corpus FEBUS e splits por aquisição/configuração, incluindo as quatro
-   famílias; não trocar dados e arquitetura simultaneamente. Não filtrar o alvo.
+   famílias, com a mesma seleção espacial e tiling já auditados. Não trocar
+   cobertura e arquitetura simultaneamente nem filtrar componentes temporais
+   do sinal válido para facilitar a reconstrução.
 2. Mesmo gargalo VQ inicial, K/dimensão de embedding controlados e pelo menos
    dois orçamentos de bits comuns: ponto compacto e ponto de maior fidelidade.
    Contar índices reais por shape, padding e side, não só comparar dimensões latentes.

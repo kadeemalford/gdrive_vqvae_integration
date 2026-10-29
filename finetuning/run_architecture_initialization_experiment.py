@@ -26,7 +26,7 @@ except ImportError:
 ARMS = {"transferred_4x": "native-v1", "scratch_4x": "native-v1", "scratch_temporal": "temporal-dilated-v1"}
 
 
-def initialize_codebook(model, paths, seed):
+def initialize_codebook(model, paths, seed, normalization="escape-v1"):
     """Training-only latent reservoir, no gradient updates or validation calibration."""
     device = next(model.parameters()).device
     generator = torch.Generator(device="cpu").manual_seed(seed)
@@ -34,7 +34,7 @@ def initialize_codebook(model, paths, seed):
     model.eval()
     with torch.no_grad():
         for path in paths:
-            values = load_sample(path, normalization="escape-v1")
+            values = load_sample(path, normalization=normalization)
             tensor = torch.from_numpy(values).to(device)[None, None]
             multiple = 2 ** model.downsample_levels
             padded = F.pad(tensor, (0, (-values.shape[1]) % multiple, 0, (-values.shape[0]) % multiple))

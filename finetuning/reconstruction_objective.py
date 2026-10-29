@@ -65,7 +65,11 @@ def stratified_validation(paths: list[Path], metadata: dict, per_file: int, seed
         return paths
     groups = defaultdict(list)
     for path in sorted(paths):
-        groups[metadata[path]["drive_id"]].append(path)
+        meta = metadata[path]
+        # New spatial preparations can split one file into distinct regions.
+        # Do not let a per-file pilot silently omit a retained spatial region.
+        key = (meta["drive_id"], str(meta.get("spatial_region_index", "legacy")))
+        groups[key].append(path)
     rng = random.Random(seed)
     return sorted(path for key in sorted(groups) for path in rng.sample(groups[key], min(per_file, len(groups[key]))))
 
@@ -78,14 +82,15 @@ def aggregate_validation(rows: list[dict]) -> tuple[dict, list[dict]]:
     """Equal config weights within family, then equal family weights. No VQ in RMSE."""
     if not rows:
         raise ValueError("Validation is empty")
-    keys = [k for k in rows[0] if k not in ("family", "configuration")]
+    keys = [k for k in rows[0] if k not in ("family", "configuration", "_aggregation_weight")]
     grouped = defaultdict(list)
     for row in rows:
         grouped[(row["family"], row["configuration"])].append(row)
     groups = []
     families = defaultdict(list)
     for (family, configuration), values in sorted(grouped.items()):
-        averages = {key: float(np.mean([v[key] for v in values if np.isfinite(v[key])]))
+        averages = {key: float(np.average([v[key] for v in values if np.isfinite(v[key])],
+                         weights=[v.get("_aggregation_weight",1.) for v in values if np.isfinite(v[key])]))
                     if any(np.isfinite(v[key]) for v in values) else float("nan") for key in keys}
         groups.append({"family": family, "configuration": configuration, "windows": len(values), **averages})
         families[family].append(averages)
@@ -100,7 +105,7 @@ def aggregate_validation(rows: list[dict]) -> tuple[dict, list[dict]]:
     return macro, groups
 
 
-def evaluate_detailed(model, paths, metadata, device, load_sample, spectral_weight=0.0, load_valid_mask=None, fidelity_transform=None, on_sample=None):
+def evaluate_detailed(model, paths, metadata, device, load_sample, spectral_weight=0.0, load_valid_mask=None, fidelity_transform=None, on_sample=None, spatial_weighting=False):
     model.eval()
     rows = []
     with torch.no_grad():
@@ -129,7 +134,9 @@ def evaluate_detailed(model, paths, metadata, device, load_sample, spectral_weig
                          "objective": float((temporal + vq_loss + spectral_weight * spectral).item()),
                           **metrics(metric_values if valid is None else metric_values[valid], metric_decoded if valid is None else metric_decoded[valid]),
                           **spectral_metrics(metric_values, metric_decoded), **extras,
-                          **({"escaped_cell_fraction": float((~valid).mean())} if valid is not None else {})})
+                           **({"escaped_cell_fraction": float((~valid).mean())} if valid is not None else {})})
+            if spatial_weighting:
+                rows[-1]["_aggregation_weight"] = float(values.size)
             if on_sample:
                 on_sample(path, rows[-1])
     macro, groups = aggregate_validation(rows)

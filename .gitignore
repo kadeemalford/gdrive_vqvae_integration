@@ -61,3 +61,6 @@ Thumbs.db
 
 # Intentionally tracked: config/, data/manifests/, progress_reports/, tests/,
 # README.md, Makefile, requirements.txt and .env.example.
+
+*.pdf
+*.pptx

@@ -26,7 +26,8 @@ def load_model(repo_root: Path, checkpoint_path: Path, device: torch.device):
     if policy not in ("per-time-chunk", "escape-v1", "robust-escape-v1"):
         raise ValueError(f"Unsupported inference normalization: {policy}")
     return build_model(config, checkpoint, device), {
-        **config, "inference_normalization": policy, "checkpoint_epoch": checkpoint.get("epoch")
+        **config, "inference_normalization": policy, "checkpoint_epoch": checkpoint.get("epoch"),
+        "preprocessing": checkpoint.get("finetune", {}).get("preprocessing", {"spatial_band_policy": "none", "parameters": {}})
     }
 
 
@@ -122,6 +123,12 @@ def main() -> int:
             with np.load(source_path, allow_pickle=False) as payload:
                 raw = np.asarray(payload["data"], dtype=np.float32)
                 metadata = json.loads(str(np.asarray(payload["metadata_json"]).item()))
+            expected = model_config["preprocessing"]["spatial_band_policy"]
+            actual = metadata.get("spatial_band_policy", "none")
+            if expected != "none" and actual != expected:
+                raise ValueError("Sample spatial preprocessing differs from trained checkpoint")
+            if expected == "none" and actual != "none":
+                print("[reconstruct] warning: historical checkpoint on spatially filtered inputs; distribution differs from training")
             if raw.ndim == 2:
                 raw = raw[np.newaxis, ...]
             if raw.ndim != 3:

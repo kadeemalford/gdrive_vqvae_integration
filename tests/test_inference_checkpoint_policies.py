@@ -74,7 +74,7 @@ class InferencePoliciesTest(unittest.TestCase):
             subprocess.run([sys.executable, str(script), "--config", str(root / "config.json"),
                             "--raw-dir", str(root), "--output-dir", str(root / "samples"),
                             "--manifest-output", str(root / "manifest.json"),
-                            "--drop-nonfinite-channels"], check=True, capture_output=True)
+                            "--drop-nonfinite-channels", "--spatial-band-policy", "none"], check=True, capture_output=True)
             with np.load(root / "samples/raw.npz", allow_pickle=False) as packet:
                 self.assertEqual(packet["data"].shape, (1, 3, 16))
                 metadata = json.loads(str(packet["metadata_json"].item()))
