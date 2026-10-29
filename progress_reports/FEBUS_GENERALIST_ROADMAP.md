@@ -45,17 +45,24 @@ declarar sua ponderação para não equiparar um resto de um canal a uma região
 512 canais. Avaliação do codec deve reconstruir os vetores discretos exatos a
 partir dos índices, sem depender de resíduos numéricos do straight-through.
 
-A decisão estrutural é comparar **A) arquitetura nativa com inicialização offshore,
+A comparação estrutural de referência é **A) arquitetura nativa com inicialização offshore,
 B) mesma arquitetura com inicialização aleatória e C) arquitetura orientada a
 FEBUS com inicialização aleatória**, no mesmo corpus FEBUS e orçamento de bits.
 O offshore original, sem fine-tuning, é o baseline de origem; referências já
 adaptadas são outros pontos de comparação, não substitutos desse baseline.
 
-Priorizar uma CNN residual multiescala **anisotrópica canal–tempo** como hipótese
-para C. Avaliar atenção temporal/fatorizada em ablação posterior contra a CNN sem
-atenção; não presumir que Transformer seja necessário. Manter inicialmente um
-encoder/decoder generalista e quantizador controlado. O artigo CNN–Transformer
-com OWR inspira componentes, não a adoção de classificação/expansão de classes.
+A comparação A/B/C e sua confirmação não demonstraram superioridade de C; a
+liderança transferida não testa nem descarta uma rede substancialmente maior.
+**A prioridade estrutural passa a ser expansão controlada da capacidade, até
+cerca de 100M parâmetros, mantendo o gargalo compacto**, seguida de alocação
+adaptativa ROI com cobertura global. A seção 6 reúne a base bibliográfica e
+separa resultados publicados de escolhas experimentais para FEBUS.
+
+Usar a CNN residual generalista como primeiro controle de escala; contexto
+multiescala anisotrópico e atenção temporal/fatorizada são ablações separadas,
+não mudanças obrigatórias junto com o tamanho. O artigo CNN–Transformer com OWR
+inspira componentes, não classificação/expansão de classes. **PINN fica fora
+deste direcionamento.**
 
 Essa comparação da etapa 8 depende de protocolo, integridade e controles básicos
 das etapas 1–3, **não de esgotar fine-tuning, especialistas ou todas as losses**.
@@ -252,6 +259,15 @@ de congelamento como solução universal.
 - Inventário de datasets externos com licença, origem, unidades e compatibilidade física.
 - Piloto FEBUS-only versus externos+FEBUS, incluindo pré-treino/adaptação e mistura,
   com custos e transferência negativa medidos por família.
+- Curvas de escala de dados por aquisições/configurações inteiras, inicialmente
+  25%, 50% e 100% dos grupos disponíveis no treino, com estratos preservados quando
+  viável; não partir arquivos correlacionados só para atingir essas frações.
+  Comparar pelo menos o controle e a rede maior, validação fixa e exposição
+  registrada; controlar updates e analisar também passes/convergência.
+- Medir duração única, canais/metros úteis, eventos/regimes e diversidade espectral,
+  além de janelas. Não converter contagens de imagens ou horas de áudio da literatura
+  em uma regra de amostras por parâmetro para DAS. Novas aquisições independentes
+  são prioridade de generalização, sem bloquear um piloto de capacidade no corpus atual.
 
 **Critério de passagem:** evidência de diversidade adicional útil ou justificativa
 explícita para preencher uma lacuna. GB brutos, inclusive de OOI, não diagnosticam
@@ -293,6 +309,29 @@ generalizáveis. Média de reconstruções pode suavizar o sinal e exige valida�
 otimização estiverem adequadamente controlados.
 
 **Entregáveis a desenvolver/validar:**
+- **Escala de capacidade a taxa fixa:** controle ~28M e alvo ~100M (faixa de projeto
+  80–120M); ponto intermediário ~50M se necessário para diagnosticar tendência/custo.
+  Esses tamanhos são hipóteses de engenharia, não ótimos demonstrados para DAS.
+  Começar no ponto compacto já controlado, preservando grade por shape, K=2.048,
+  dimensão 128, 11 bits por índice, normalização, filtro, objetivo e cobertura.
+  Mais largura interna não pode aumentar silenciosamente o número de tokens.
+- Escalar primeiro profundidade/largura de uma mesma família residual, investindo
+  em processamento em resolução reduzida; avaliar uma expansão do decoder ou
+  blocos de contexto como ablação posterior. Atenção, se testada, deve operar em
+  tokens reduzidos/janelas/eixos fatorizados, não em atenção global de todos os
+  512×1.000 pontos. Contar parâmetros por encoder/decoder/quantizador/modelo de
+  probabilidade; aumentar o preditor entrópico não equivale a aumentar o reconstrutor.
+- Separar capacidade de inicialização: controles pequeno/grande do zero para o
+  contraste causal, mantendo A transferido como referência prática. Uma expansão
+  inicializada dos pesos offshore pode ser outro contraste apenas após validar
+  preservação funcional/compatibilidade; não comparar só grande scratch versus
+  pequeno transferido e atribuir a diferença ao tamanho.
+- Verificar gradiente, AdamW, replay apenas de índices, shapes máximos, memória e
+  throughput antes de treino longo. Em GPU de 8 GiB, 100M não tem viabilidade
+  garantida: checkpointing, precisão validada e acumulação são recursos possíveis,
+  mas não justificam reduzir contexto/alvo ou mudar a taxa sem um controle próprio.
+  Parear exposição inicial e dar extensões limitadas por convergência predefinida;
+  reportar também FLOPs/tempo, pois updates iguais não igualam compute.
 - Inicialização aleatória versus transferência, com orçamento suficiente e comparável.
 - Comparação controlada de referência transferida, mesma arquitetura do zero e
   variante arquitetural do zero no corpus fixo. Parear taxa, objetivo, exposição
@@ -320,6 +359,18 @@ otimização estiverem adequadamente controlados.
 - Ablações de strides, capacidade, codebook, quantização residual/multiescala e
   condicionamento físico, sem alterar todos os componentes simultaneamente.
 - Curvas rate-distortion que incluam custos reais de codificação e decodificação.
+- **Codificação entrópica dos índices:** estimar redundância marginal e condicional
+  com dados de treino; comparar empacotamento fixo e entropy coding em índices
+  congelados antes de alterar o quantizador. Exigir bitstream decodificável e
+  índices idênticos. Contexto usa somente símbolos/metadados disponíveis ao decoder;
+  contabilizar tabelas, modelos, headers e latência. Hiperprior é etapa posterior
+  com side cobrado, não atalho sem custo.
+- **Quantização, somente em ablação própria:** manter VQ atual no estudo de escala;
+  depois comparar K=1.024/2.048/4.096 (10/11/12 bits por índice) com curvas de taxa,
+  não como taxas iguais. Dimensão do embedding não é quantidade de bits transmitidos.
+  FSQ é candidato para estabilidade, não solução comprovada para FEBUS; RVQ é
+  candidato a refinamento, cobrando cada índice de cada estágio. Não repetir
+  reativação de códigos apenas porque a utilização é baixa.
 - Controles clássicos históricos podem contextualizar as curvas, sem condicionar
   a investigação neural a um novo benchmark clássico ou substituí-la por codec clássico.
 - Fronteira não dominada de checkpoints em erro, amplitude, fase, piores canais
@@ -329,6 +380,40 @@ otimização estiverem adequadamente controlados.
 taxa, ou melhoria demonstrada da curva rate-distortion. A vantagem de um latente
 contínuo não demonstra vantagem de compressão sem um codec/taxa equivalentes.
 Dados e arquitetura podem ser investigados conjuntamente, mas com ablações separáveis.
+
+### Etapa 8B — ROI espaço-temporal e refinamento neural com orçamento limitado
+
+**Objetivo:** melhorar a distribuição dos bits sem abandonar a reconstrução de
+toda a região útil. ROI significa priorizar sinal válido; não substitui nem
+altera a máscara heurística de canais inadequados.
+
+**Entregáveis a desenvolver/validar:**
+- Camada neural básica global e refinamento residual quantizado em tiles
+  selecionados. Alternativamente, mapas de qualidade condicionam o codec;
+  essa alternativa deve ser comparada separadamente, sem assumir equivalência.
+- Primeira política de ROI baseada em dificuldade de reconstrução medida **no
+  encoder**, que dispõe do original e da reconstrução básica; combinar erro local
+  relativo limitado e absoluto para não favorecer apenas regiões de alta energia
+  nem explodir em canais fracos. Nenhum rótulo/evento ou oracle de teste é necessário.
+  Fixar regra, limites e orçamento no desenvolvimento antes de avaliar.
+- Distinguir essa seleção implementável da escolha retrospectiva do melhor modelo
+  por erro no teste. O decoder recebe somente stream básico, mapa/endereços,
+  refinamentos e metadados codificados; nenhum acesso ao original ou skip gratuito.
+- Sob o mesmo orçamento total por janela/arquivo, comparar uniforme versus
+  adaptativo. Medir cobertura/fração ROI, custos de endereços/máscaras e os ganhos
+  dentro e fora de ROI, além de todas as guardas por família/configuração/canal.
+  Refinar tudo é controle de maior taxa, não vitória da alocação adaptativa.
+- Proteger eventos fracos, regiões sem ROI e transições/bordas; testar ROI vazia,
+  saturada, sinal fraco, metadados ausentes e padrão fora do domínio. Definir um
+  piso de fidelidade global e fallback explícito quando o orçamento não bastar.
+- Se um seletor aprendido for considerado depois, usar somente treino e comparar
+  com a política determinística; medir falsos negativos e custo de inferência.
+  Não adotar saliência visual, GAN ou geração de textura para completar DAS.
+
+**Critério de passagem:** melhor curva fidelidade–bits no sistema completo e
+respeito ao piso global/caudas; ganho em ROI com degradação não autorizada fora
+dela não satisfaz o objetivo generalista. A mudança da distribuição de qualidade
+deve ser explícita e compatível com a aplicação.
 
 ### Etapa 9 — Seleção robusta, auditoria externa e modelo final
 
@@ -374,13 +459,13 @@ dados como evidência de generalização; o holdout externo permanece fora do tr
 ```text
 Requisitos e avaliação → integridade/pipeline → baselines e diagnóstico
                                                ↓
-                     comparação neural A/B/C com orçamento de bits comum
+                     controles A/B/C → escala ~28M / ~100M em taxa compacta fixa
                                                ↓
                      ┌──────────────────────────┼──────────────────────────┐
                      ↓                          ↓                          ↓
           Lacuna de diversidade      Trade-off entre grupos       Limite de capacidade/taxa
                      ↓                          ↓                          ↓
-          Dados FEBUS-like           Objetivo/preservação          Arquitetura/quantização
+          Dados FEBUS-like           ROI + piso global             Capacidade/contexto/quantização
                      └──────────────────────────┼──────────────────────────┘
                                                ↓
                              seleção robusta → auditoria externa → modelo final
@@ -416,15 +501,23 @@ a auditoria externa da etapa 9.
 Quando ganhos incrementais não aproximarem a fidelidade dos requisitos da aplicação,
 investigar a etapa 8 sem exigir novas continuações inalteradas da etapa 5. Manter
 uma referência fixa e comparar arquitetura/inicialização no mesmo corpus; ampliar
-dados em estudo separado da etapa 6. A ordem preferida é:
+dados em estudo separado da etapa 6. Após os controles A/B/C, a ordem preferida é:
 
 1. Testes de shape, gradiente, memória, compatibilidade e taxa dos candidatos.
-2. Triagem transferido/scratch/variante com curvas e diagnóstico de quantização.
+2. Escala da família residual até ~100M, preservando o ponto compacto e separando
+   capacidade de inicialização; A transferido permanece referência prática.
 3. Orçamento adicional ou ablação de otimização quando não houver convergência,
    antes de concluir inferioridade estrutural.
 4. Confirmação por seed/grupo de candidatos que melhorem a fronteira de fidelidade.
 5. Ampliação de aquisições quando houver evidência de lacuna de diversidade,
    preservando protocolo fixo e holdout externo.
+
+Codificação entrópica congelada pode ser investigada independentemente da escala,
+sem alterar os símbolos nem o contraste de capacidade. ROI vem em estudo próprio
+após uma base codificável controlada; novos quantizadores e atenção não são
+acoplados ao primeiro teste de 100M. Se houver ganho compacto, construir curva
+com pontos progressivamente mais comprimidos, incluindo a geometria offshore
+original como controle. **700× é uma meta exploratória, não um resultado previsto.**
 
 Não alterar arquitetura, inicialização, objetivo e dataset ao mesmo tempo nem
 apresentar vantagem de uma triagem como prova de fidelidade suficiente.
@@ -439,3 +532,116 @@ apresentar vantagem de uma triagem como prova de fidelidade suficiente.
   distinto apenas por ser antigo. Caminhos compartilhados exigem gravação atômica.
 - Manter comandos e procedimentos de recuperação nos relatórios ou na documentação
   operacional, sem transformar este roadmap em um diário de execução.
+
+## 6. Base bibliográfica e prioridades derivadas
+
+Revisão dirigida de artigos e projetos públicos, consultados em **29/10/2026**;
+não é revisão sistemática exaustiva. Fontes com texto/código acessível têm maior
+força para escolhas de implementação do que resumos. Não foi identificada, nesta
+busca, demonstração de um codec neural único com avaliação conjunta nas quatro
+famílias FEBUS, nossos alvos físicos e nossas guardas de canais. Isso não prova
+inexistência de trabalhos equivalentes.
+
+### 6.1 Convergência com compressão DAS
+
+| Fonte e acesso | Evidência relevante | Convergência e limite para FEBUS |
+|---|---|---|
+| [Wang et al., Applied Optics, 2024 — RAE](https://doi.org/10.1364/AO.527625). Resumo e disponibilidade de dados na página da editora; texto integral restrito. | Autoencoder recorrente/LSTM; resumo relata SNR 40,60 dB em CR=8 e CR máximo 512. Dados remetem a Brady Hot Springs. | Apoia explorar contexto temporal; **não** assumir SNR 40,60 dB em CR=512. Não foi possível auditar tamanho de rede, quantidade efetiva de treino ou contabilidade integral de bits; 512× não é meta transferível diretamente. |
+| [Chen et al., TGRS, 2025 — Deep Learning for Seismic Data Compression in DAS](https://doi.org/10.1109/TGRS.2025.3526933). Resumo público consultado; texto integral não auditado. | Encoder ViT e decoder; armazenamento de features e pesos do decoder; resumo anuncia ~50× em dados de escala GB. | Contexto não local é uma hipótese pertinente, não prova de generalização multifibra ou de superioridade de Transformer. Distinguir ajuste por registro de codec compartilhado. Não transplantar ~50× sem decompor downsampling, features e pesos. |
+| [Ni et al. — Wavefield Reconstruction of DAS](https://doi.org/10.1029/2024JH000247). Resumo indexado; acesso integral bloqueado nesta revisão. | Compara INR e SHRED. Resumo relata generalização espaço-temporal de SHRED numa fibra com 20% dos canais e dificuldade em transientes de menor comprimento de onda; INR não generaliza sobre espaço/tempo. | Reforça verificar transientes/alta frequência e separar reconstrução de canais omitidos de codec que codifica todas as amostras. Não adotar INR ajustada por janela como generalista sem cobrar pesos e treino. |
+| [AI4EPS/ZipDAS](https://github.com/AI4EPS/ZipDAS). README e código `train.py`/`zipdas/model.py` consultados. | Codec neural baseado em Ballé 2017, quantização escalar e prior fatorizado; custo taxa–distorção e empacotamento entrópico. Defaults do trainer: 128 filtros e patches 1.024×1.024. | Demonstra implementação neural DAS com stream, não necessidade de um VQ específico. Defaults não são ótimo validado. O loader de treino/validação usa a mesma fonte de dados no código consultado; não importar o split como evidência de generalização. Auditar normalização/escala física ao adaptar. |
+| [Cullison, Li e Almomin — Stanford SEP-194, 2024](https://sep.sites.stanford.edu/publications/sep-reports/sep-194-2024), [projeto CAE](https://github.com/Haipeng-ustc/CS230-DAS-Compression). Resumo institucional e README. | CAE para DAS urbano; resumo descreve ~30× preliminares, redução de ruído e alterações em sinais quase estáticos. | Próximo no formato canal–tempo, mas denoising não é fidelidade ao bruto. Dataset disponível por contato, sem escala de treino reproduzível estabelecida aqui. |
+
+Artigos clássicos recentes servem **apenas como contexto dos protocolos**:
+[DASPack](https://doi.org/10.1093/gji/ggaf397) discute diversidade de 15 datasets
+e custos/erros; [Ma et al., 2026](https://doi.org/10.1093/gji/ggag288) distinguem
+regimes dominados por eventos e ruído em oito datasets. Não são alternativa de
+produto, pré-requisito de benchmark, nem um limite teórico da compressão neural.
+Diferenças de sinal, banda e tolerância impedem ranquear artigos só por CR.
+
+### 6.2 Evidência transferível de codecs neurais próximos
+
+**Escala de rede — evidência favorável, mas não uma lei universal.**
+[Li et al., Scaling Learned Image Compression Models up to 1 Billion,
+arXiv:2508.09075v1](https://arxiv.org/html/2508.09075v1) estudam redes HPCM de
+**68,50M, 120,08M, 246,43M, 543,57M e 1.002M**. Texto integral consultado:
+treino em Flickr2W, crops 256×256, batch 32 e dois milhões de updates;
+ganhos taxa–distorção ao escalar. O modelo de 1B chega a ~0,3 dB a mais em altas
+taxas frente aos melhores modelos comparados. A escala intermediária é analisada
+principalmente num único ponto de lambda; a arquitetura inclui transformadas,
+hiperprior e preditor entrópico. É um **preprint**, não resultado DAS e não
+equivale a expandir só encoder/decoder com VQ fixo. Sua comparação também encontra
+instabilidade ao escalar variantes Swin. A pequena inclinação do ajuste de escala
+desaconselha prometer ganho proporcional ao número de parâmetros.
+
+Como contraponto, [Luo, Rethinking Learned Image Compression: Context is All You
+Need, arXiv:2407.11590v1](https://arxiv.org/html/2407.11590v1), também preprint,
+relata retornos pequenos/não monotônicos ao alargar o backbone, e destaca o modelo
+de contexto. Usa 8.000 imagens ImageNet e testa expansão para 16.000 sem ganho
+expressivo nessa configuração. Há experimentos deliberados de overfitting em
+Kodak: não importar seus resultados como validação independente nem suas
+interpretações como teorema. A convergência útil entre os dois trabalhos é:
+**onde colocar capacidade e como treiná-la importa; 100M é hipótese, não ótimo.**
+
+**Bits por símbolo — aproveitar redundância, não só reduzir tokens.**
+[Ballé et al., ICLR 2018 — Scale Hyperprior](https://arxiv.org/abs/1802.01436)
+fundamentam modelagem probabilística com informação auxiliar cobrada. Em sinais,
+[Défossez et al., EnCodec, 2022/2023](https://arxiv.org/abs/2210.13438) e
+[código público](https://github.com/facebookresearch/encodec) usam RVQ: até 32
+codebooks de 1.024 entradas, 10 bits por estágio/símbolo; número de estágios
+controla taxa. Um modelo de probabilidade reduz o stream em até 40% naquele
+contexto. Isso **não prevê 40% em FEBUS**, mas justifica medir entropia dos nossos
+índices e depois bytes reais. Treino de EnCodec: 600.000 updates, batch 64 de
+segmentos de um segundo, fontes diversas e oito A100; são exposições, não uma
+receita de tamanho mínimo do dataset DAS. Seus objetivos perceptuais/adversariais
+não são transferidos para reconstrução científica do bruto.
+
+**Quantização — estabilidade separada de capacidade.**
+[Mentzer et al., FSQ, ICLR 2024](https://arxiv.org/abs/2309.15505) substituem VQ
+aprendida por poucas dimensões quantizadas em níveis fixos, com codebook implícito
+igual ao produto dos níveis. É evidência para uma ablação de estabilidade/uso de
+códigos, não prova de melhor RMSE DAS. Comparações exigem cardinalidade/bits
+explícitos, incluindo estados não usados e projeções; utilização elevada por si
+só não promove um codec. RVQ de áudio inspira refinamento progressivo, mas cada
+estágio transmite índices adicionais: não confundir com ganho gratuito de taxa.
+
+**ROI — alocação adaptativa com objetivo explícito.**
+[Song, Choi e Han, ICCV 2021 — Spatially-Adaptive Feature Transform](https://arxiv.org/abs/2108.09551)
+e [QmapCompression](https://github.com/micmic123/QmapCompression) condicionam um
+codec em mapas de qualidade e distribuem bits espacialmente. Texto do artigo
+consultado: melhorar uma tarefa pode piorar PSNR global; o mecanismo não garante
+fidelidade uniforme. [Flexible Neural Image Compression via Code Editing,
+NeurIPS 2022](https://proceedings.neurips.cc/paper_files/paper/2022/file/4f3820576130a8f796ddbf204c841487-Paper-Conference.pdf)
+oferece precedente de ajuste de latentes/quantização para taxa e ROI com decoder
+compartilhado, ao custo de otimização na codificação. Convergência: usar mapas ou
+refinamentos, medir custos e separar dentro/fora da ROI. **Não importar saliência
+visual, LPIPS/GAN ou texturas plausíveis como objetivos do sinal FEBUS.**
+
+### 6.3 Escolhas prioritárias para o projeto
+
+| Eixo | Prioridade proposta | O que a literatura não permite concluir |
+|---|---|---|
+| Capacidade | Comparar ~28M com ~100M na mesma família residual e taxa compacta; ~50M é ponto diagnóstico opcional. | Não há tamanho ótimo publicado para nosso corpus; não prever recuperação de 700× por quadruplicar parâmetros. |
+| Arquitetura | CNN residual escalável; contexto em baixa resolução e multiescala. Atenção fatorizada é ablação posterior. | ViT/LSTM bem-sucedidos em uma aquisição não estabelecem vencedor entre as quatro fibras. |
+| Dados | Corpus auditado para o piloto; curvas por grupos inteiros e novas aquisições para robustez externa. | As 28.780 janelas preparadas dos 207 HDF5 não são 28.780 realizações independentes, nem todas pertencem ao treino. Não há fórmula validada de janelas por parâmetro. |
+| Quantização | Primeiro K=2.048, dimensão 128, mesma grade; depois entropia e ablações K/FSQ/RVQ isoladas. | Mais códigos usados ou maior dimensão latente não garantem mais informação útil por bit. |
+| ROI | Base global + refinamento residual local sob orçamento total, com mapa decidido no encoder e piso global. | Não garante economia se todas as regiões forem difíceis; ROI não deve esconder sinais fracos ou aumentar custo sem contabilização. |
+
+Uma regra para comparar eficiência é separar **contagem de índices**, **bits por
+índice** e **custos auxiliares**. No empacotamento fixo:
+
+`B_total = N_indices × ceil(log2 K) + B_normalization + B_escapes + B_maps + B_container`.
+
+Em múltiplos estágios/níveis, somar seus custos; em entropy coding, substituir o
+termo fixo pelos bytes efetivos dos símbolos. Pesos compartilhados são custo de
+implantação/amortização, não payload obrigatório de toda janela; pesos ou adapters
+ajustados por aquisição devem ser cobrados. Para ~100M, só pesos FP32 representam
+~400 MB decimais, fora ativações, gradientes, optimizer e codebooks.
+
+O offshore ~744,73× com correlação ~0,9017 é referência motivadora do artigo
+fornecido, não controle pareado: alvo, bandas, agregação, overhead e unidade física
+precisam ser harmonizados. Não estabelecer equivalência com RMSE denormalizado ou
+com a macro atual. A ordem de decisão é **capacidade a taxa fixa → confirmação
+por grupos/seeds → ROI com taxa total controlada**, com estudo independente de
+entropia e diversidade. Requisitos físicos e auditoria externa acompanham essa
+investigação; não a substituem e continuam obrigatórios para promoção final.
