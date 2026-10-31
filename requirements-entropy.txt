@@ -1,0 +1,2 @@
+# Optional learned index-probability experiment; base dependencies are separate.
+constriction==0.5.0

@@ -53,9 +53,11 @@ adaptadas são outros pontos de comparação, não substitutos desse baseline.
 
 A comparação A/B/C e sua confirmação não demonstraram superioridade de C; a
 liderança transferida não testa nem descarta uma rede substancialmente maior.
-**A prioridade estrutural passa a ser expansão controlada da capacidade, até
-cerca de 100M parâmetros, mantendo o gargalo compacto**, seguida de alocação
-adaptativa ROI com cobertura global. A seção 6 reúne a base bibliográfica e
+A expansão controlada até cerca de 100M na CNN nativa mostrou ganho macro modesto,
+sem preservação generalista das caudas; não fundamenta outro aumento cego de
+largura. **A prioridade passa à economia lossless dos índices e à alocação
+adaptativa ROI com cobertura global**, mantendo capacidade/contexto como hipóteses
+separadas. A seção 6 reúne a base bibliográfica e
 separa resultados publicados de escolhas experimentais para FEBUS.
 
 Usar a CNN residual generalista como primeiro controle de escala; contexto
@@ -143,6 +145,17 @@ tenham atendido aos critérios de produção.
 | [Relatório 62 — corpus corrigido e comparação A/B/C](62-SPATIAL_CORPUS_AND_CONTROLLED_NEURAL_COMPARISON.md) | Auditoria integral do corpus espacial, arquitetura fatorizada multiescala, replay discreto exato, controle de memória e protocolo em duas taxas. | Separar cobertura, inicialização, capacidade, taxa e compute; usar orçamento limitado com extensão por convergência e avaliação por configuração/canal, sem promoção por média isolada. |
 | [Relatório 63 — resultados e confirmação](63-SPATIAL_ABC_RESULTS_AND_FOLD_CONFIRMATION.md) | Transferência liderou as duas taxas na coorte inicial; guardas não autorizaram promoção e scratch utilizou menos códigos. | Confirmar em outra rotação/configuração antes de acrescentar atenção ou mudar loss/quantizador; manter referência histórica compatível com os novos papéis de treino/validação. |
 | [Relatório 64 — confirmação concluída](64-CROSS_FOLD_CONFIRMATION_RESULTS.md) | Transferência voltou a liderar, mas ganhos macro coexistem com regressões por arquivo/configuração. | Priorizar validação física e tolerâncias de aplicação; não abrir nova busca arquitetural nem promover por média isolada. |
+| [Relatório 66 — expansão de capacidade](66-CAPACITY_COMPACT_RESULTS.md) | CNN nativa de 96,5M melhorou RMSE macro modestamente na mesma taxa, com regressões por configuração/canal. | Não extrapolar simples largura para ganho generalista; separar capacidade, quantização e alocação dos bits. |
+| [Relatório 67 — índices e ROI](67-FROZEN_SYMBOL_CODING_AND_ROI_PROTOCOL.md) | Protocolo de stream real lossless e controles de ROI por tiles com teto de bytes. | Medir bytes e overhead, preservar códigos, diferenciar seleção de modo de refinamento residual e avaliar regiões fora de ROI. |
+| [Relatório 68 — streams e alocação](68-FROZEN_CODING_RESULTS_AND_TAIL_ROI.md) | Codificação e metadados lossless melhoram a taxa sem mudar a reconstrução; ROI por RMSE não domina as caudas. | Cobrar container e modelos, comparar critérios concorrentes e exigir alocação aninhada ao expandir orçamento progressivo. |
+| [Relatório 69 — residual progressivo](69-PROGRESSIVE_RESIDUAL_REFINEMENT_PROTOCOL.md) | Piloto com base compacta congelada e rede menor para codificar o erro com orçamento adicional explícito. | Separar ganhos do refiner de proteção por fallback; transmitir só códigos e side necessários, medir a fronteira em bytes reais e confirmar antes de integrar. |
+| [Relatório 70 — residual e FSQ](70-RESIDUAL_RESULTS_AND_FSQ_ABLATION.md) | Residual VQ apresentou ganho desprezível e concentração em poucos códigos; ablação de quantizador com mesma cardinalidade/índices. | Separar otimização do gargalo de tamanho de rede; estados utilizados não substituem fidelidade, custo e confirmação. |
+| [Relatório 71 — FSQ e modos pareados](71-FSQ_RESULTS_AND_MATCHED_MODE_COMPARISON.md) | Residual FSQ melhora fidelidade e ocupa estados, mas transmite mais bits reais que VQ quase constante; comparação contra troca densa/híbrida. | Comparar à mesma prioridade e teto de bytes, incluindo número de modelos e alocação aninhada; confirmar só ganhos que melhorem a fronteira completa. |
+| [Relatório 72 — confirmação residual](72-RESIDUAL_CROSS_FOLD_CONFIRMATION.md) | Protocolo de outra rotação/seed com base compacta compatível e controles de modos/bytes preservados. | Não transportar pesos que viram grupos reservados; confirmar também trade-offs de cauda, registry e custo, não só ganho macro. |
+| [Relatório 73 — confirmação e bytes medidos](73-RESIDUAL_CONFIRMATION_AND_WIRE_MATCHED_RESULTS.md) | Ganho residual repete contra base, mas benefício híbrido é pequeno a bytes quase iguais e caudas não dominam. | Encerrar expansão/retuning de reconstrução sem nova hipótese; custo de modelos e aceitação física não desaparecem com vantagem macro. |
+| [Relatório 74 — prior de índices](74-LEARNED_LOSSLESS_INDEX_PRIOR_PROTOCOL.md) | Protocolo de contexto checkerboard com controles marginal/range/Huffman e pesos cobrados. | Separar fidelidade de redundância do stream; provar identidade dos códigos, medir bytes líquidos e exigir portabilidade das probabilidades. |
+| [Relatório 75 — prior neural negativo](75-NEURAL_INDEX_PRIOR_NEGATIVE_RESULT.md) | Payload melhora, mas pesos do prior superam a economia na coorte. | Não promover cross-entropy ou ganho sem overhead; distinguir amortização hipotética de economia medida. |
+| [Relatório 76 — transições estáticas](76-STATIC_INDEX_TRANSITION_PROTOCOL.md) | Protocolo de repetição/literais em códigos neurais congelados, com quatro pontos e controles completos. | Explorar redundância com menor descrição estatística sem substituir o reconstrutor neural ou alterar cobertura/fidelidade. |
 
 ## 3. Etapas e entregáveis
 
@@ -641,7 +654,9 @@ ajustados por aquisição devem ser cobrados. Para ~100M, só pesos FP32 represe
 O offshore ~744,73× com correlação ~0,9017 é referência motivadora do artigo
 fornecido, não controle pareado: alvo, bandas, agregação, overhead e unidade física
 precisam ser harmonizados. Não estabelecer equivalência com RMSE denormalizado ou
-com a macro atual. A ordem de decisão é **capacidade a taxa fixa → confirmação
-por grupos/seeds → ROI com taxa total controlada**, com estudo independente de
-entropia e diversidade. Requisitos físicos e auditoria externa acompanham essa
+com a macro atual. A ordem inicial foi **capacidade a taxa fixa → confirmação
+por grupos/seeds → ROI com taxa total controlada**. Diante de ganho modesto sem
+preservação das caudas na expansão simples, priorizar agora **entropia dos índices
+congelados e ROI com controles de bytes**, sem repetir automaticamente aumento
+de largura. Contexto e diversidade permanecem hipóteses separadas. Requisitos físicos e auditoria externa acompanham essa
 investigação; não a substituem e continuam obrigatórios para promoção final.

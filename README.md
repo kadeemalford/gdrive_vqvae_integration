@@ -1,6 +1,6 @@
 # Integração DAS do Google Drive com VQ-VAE
 
-Projeto experimental independente do repositório `smartgrids`. Ele avalia a fidelidade da reconstrução produzida pelo checkpoint convolucional VQ-VAE treinado no outro repositório:
+Projeto experimental que avalia a fidelidade da reconstrução produzida pelo checkpoint convolucional VQ-VAE treinado no outro repositório:
 
 ```text
 /home/murilo-barroso/source/smartgrids/runs/vqvae_512ch/best.pt

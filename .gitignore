@@ -3,6 +3,8 @@
 !/data/manifests/
 /results/
 /models/
+# External model implementation copied for remote runs; not project source.
+/vendor/smartgrids/
 
 # Large data / model files, including copies outside the usual directories.
 *.h5
