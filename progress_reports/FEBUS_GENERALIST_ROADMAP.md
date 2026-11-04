@@ -51,22 +51,58 @@ FEBUS com inicialização aleatória**, no mesmo corpus FEBUS e orçamento de bi
 O offshore original, sem fine-tuning, é o baseline de origem; referências já
 adaptadas são outros pontos de comparação, não substitutos desse baseline.
 
-A comparação A/B/C e sua confirmação não demonstraram superioridade de C; a
-liderança transferida não testa nem descarta uma rede substancialmente maior.
-A expansão controlada até cerca de 100M na CNN nativa mostrou ganho macro modesto,
-sem preservação generalista das caudas; não fundamenta outro aumento cego de
-largura. **A prioridade passa à economia lossless dos índices e à alocação
-adaptativa ROI com cobertura global**, mantendo capacidade/contexto como hipóteses
-separadas. A seção 6 reúne a base bibliográfica e
-separa resultados publicados de escolhas experimentais para FEBUS.
+A comparação A/B/C e sua confirmação não demonstraram superioridade de C. A
+expansão controlada até cerca de 100M na CNN nativa mostrou ganho macro modesto,
+sem preservação generalista das caudas. Estudos posteriores de ROI/refinamento
+e codificação dos índices também tiveram ganhos limitados na comparação por bytes.
+Esses resultados caracterizam a família de codecs testada, não um limite geral
+da compressão neural FEBUS.
 
-Usar a CNN residual generalista como primeiro controle de escala; contexto
-multiescala anisotrópico e atenção temporal/fatorizada são ablações separadas,
-não mudanças obrigatórias junto com o tamanho. O artigo CNN–Transformer com OWR
-inspira componentes, não classificação/expansão de classes. **PINN fica fora
-deste direcionamento.**
+**A prioridade passa à eficiência da representação por bit**, conforme a revisão
+do [relatório 77](77-RESEARCH_DIRECTION_REVIEW.md):
 
-Essa comparação da etapa 8 depende de protocolo, integridade e controles básicos
+1. **Fixar o alvo/cobertura e o compromisso físico antes de outra campanha longa:**
+   a restauração afim transmitida elevou E1 com guardas físicas para até **3,70%**
+   de redução de RMSE em recortes de desenvolvimento, mas só **~0,19%** no stress
+   SMF consumido. São critérios diagnósticos, não tolerâncias de aplicação.
+   Não relaxar guardas nem retirar a faixa dominante para promover uma média.
+2. **Distinguir generalização de preparação de entrada:** no SMF, re-encodificar
+   o mesmo alvo retido melhorou RMSE em ~8–17%; o particionamento que preserva
+   todas as linhas, porém, não passou bytes/RMS. O grupo SMF já é desenvolvimento
+   externo; os dois grupos EDAS continuam sem avaliação de formas de onda nesta
+   campanha. Não declarar holdout por hashes/pastas distintos nem tratar janelas
+   ou orientações relacionadas como aquisições independentes.
+3. **Encerrar os contrastes marginais, preservando seus controles:** correção
+   espacial da saída, reversão/padding de entrada e coadaptação full-VQ com/sem
+   taxa já foram testados localmente. O ganho adicional de Rate contra o controle
+   full-VQ foi **0,055%**. Não ampliar esses braços nem repetir o encoder-only.
+4. **Exigir mecanismo adicional para nova representação:** estrutura espacial no
+   residual original não significa que o decoder já tenha informação para
+   recuperá-la. Uma nova proposta deve explicar o que passa a ser transmitido ou
+   aprendido além dos contrastes concluídos, com bytes e controles explícitos.
+   O particionamento congelado e o E1 denso também não resolveram a fidelidade
+   a orçamento pareado. Granularidade dos latentes versus cardinalidade/bits por
+   símbolo é uma hipótese estrutural distinta, não testada por apenas aumentar
+   tokens ou largura; requer protocolo/controles próprios antes de execução.
+   Contexto temporal longo segue condicional; o AR não sustentou lags extras.
+
+Ampliação isolada de largura, novos refiners/seletores ROI e ajustes de empacotamento
+têm prioridade reduzida; sua retomada exige uma hipótese adicional sustentada
+pelo diagnóstico. Os primeiros pilotos E0/E1/E2 foram autorizados e executados,
+com evidências e limitações nos relatórios [78](78-REMOTE_REPRESENTATION_PILOTS.md)
+e [79](79-ENCODER_RATE_AND_TILE_WEIGHTING.md).
+A inclusão de extensões no roadmap não as executa automaticamente: cada série
+depende de autorização, protocolo, orçamento e critérios próprios. As seções 8–9
+do relatório 79 distinguem o fechamento original, os treinos locais posteriores
+e a rodada mais recente de inferência/busca, sem novos pesos neurais.
+
+A CNN residual permanece controle de arquitetura. Atenção temporal/fatorizada e
+contexto multiescala são mecanismos a comparar conforme o gargalo observado.
+O artigo CNN–Transformer com OWR inspira componentes, não classificação/expansão
+de classes. **PINN fica fora deste direcionamento.** A seção 6 reúne a base
+bibliográfica e separa resultados publicados de escolhas experimentais para FEBUS.
+
+Essa investigação das etapas 8/8A depende de protocolo, integridade e controles básicos
 das etapas 1–3, **não de esgotar fine-tuning, especialistas ou todas as losses**.
 Ampliação de dados FEBUS/compatíveis deve ser separável da mudança arquitetural.
 Novas condições de fibra podem ser mudanças fortes de domínio/geometria, sem
@@ -155,7 +191,10 @@ tenham atendido aos critérios de produção.
 | [Relatório 73 — confirmação e bytes medidos](73-RESIDUAL_CONFIRMATION_AND_WIRE_MATCHED_RESULTS.md) | Ganho residual repete contra base, mas benefício híbrido é pequeno a bytes quase iguais e caudas não dominam. | Encerrar expansão/retuning de reconstrução sem nova hipótese; custo de modelos e aceitação física não desaparecem com vantagem macro. |
 | [Relatório 74 — prior de índices](74-LEARNED_LOSSLESS_INDEX_PRIOR_PROTOCOL.md) | Protocolo de contexto checkerboard com controles marginal/range/Huffman e pesos cobrados. | Separar fidelidade de redundância do stream; provar identidade dos códigos, medir bytes líquidos e exigir portabilidade das probabilidades. |
 | [Relatório 75 — prior neural negativo](75-NEURAL_INDEX_PRIOR_NEGATIVE_RESULT.md) | Payload melhora, mas pesos do prior superam a economia na coorte. | Não promover cross-entropy ou ganho sem overhead; distinguir amortização hipotética de economia medida. |
-| [Relatório 76 — transições estáticas](76-STATIC_INDEX_TRANSITION_PROTOCOL.md) | Protocolo de repetição/literais em códigos neurais congelados, com quatro pontos e controles completos. | Explorar redundância com menor descrição estatística sem substituir o reconstrutor neural ou alterar cobertura/fidelidade. |
+| [Relatório 76 — transições estáticas](76-STATIC_INDEX_TRANSITION_PROTOCOL.md), resultados consolidados no [relatório 77](77-RESEARCH_DIRECTION_REVIEW.md) | Estudo concluído nos quatro pontos compacto/denso de dois folds, com economia adicional pequena sobre marginal/range e roundtrip exato. | Preservar a economia lossless medida; reduzir prioridade de novos ajustes de empacotamento como caminho para mudar o patamar de fidelidade. |
+| [Relatório 77 — revisão de direção](77-RESEARCH_DIRECTION_REVIEW.md) | Revisão de código, resultados e literatura; identificação do desacoplamento entre representação e custo entrópico, contexto físico curto e ponderação dos tiles. | Priorizar busca de índices com modelo fixo e aprendizado conjunto taxa–distorção; contexto maior é condicional. As novas intervenções são propostas, não resultados de treinamento. |
+| [Relatório 78 — pilotos de representação](78-REMOTE_REPRESENTATION_PILOTS.md) | Busca com pesos congelados recuperou fidelidade com teto de frames; guarda predefinida manteve ganho em novos recortes. Seis braços escalares, incluindo continuações controladas, não superaram RMSE/caudas dos controles em bytes comuns. | Ampliar confirmação E1 sem relaxar caudas; preservar o VQ como controle e isolar a próxima hipótese E2. Colapso de otimização ou um piloto negativo não estabelecem limite de toda a família de codecs. |
+| [Relatório 79 — encoder, taxa, tiling e continuidade local](79-ENCODER_RATE_AND_TILE_WEIGHTING.md) | Rate-sharp encoder-only ganhou 0,115% contra controle e full-VQ com taxa 0,055%. E1 com side afim explícito chegou a 3,70% contra origem sob guardas físicas em desenvolvimento, mas transferiu ~0,19% ao SMF consumido. O particionamento de cobertura integral não passou bytes/RMS; não finitos foram preservados em formatos exatos. | Manter resultados marginais como experimentais, distinguir alvo/cobertura, preservar os dois grupos EDAS sem avaliação de sinal e exigir nova hipótese controlada para outra campanha. SMF já é desenvolvimento externo; pastas/hashes distintos e ganhos internos não demonstram generalização. |
 
 ## 3. Etapas e entregáveis
 
@@ -215,8 +254,136 @@ transferência para configurações reservadas.
   de alinhamento ponderado por magnitudes, evitando confundir recuperação de energia
   com mudança de fase ou retirar silenciosamente componentes difíceis.
 - Evidência de convergência e ablações que separem encoder, quantizador e decoder.
+- **E0 — diagnóstico do sinal e dos denominadores:** dependência espacial/temporal,
+  covariância e erro por banda física, bordas/interior e escala dos canais, em
+  amostra fixada no treino. Reconstituir trechos contínuos para baixas frequências
+  e quantis por arquivo; confrontar erro absoluto e relativo. PSD plana, SVD ou
+  fracasso de um preditor não provam independência nem um limite informacional.
+- **Lacuna prioritária após os pilotos:** aplicar esse diagnóstico também ao erro
+  da referência e ao residual após E1, separando bandas, distância espacial física,
+  bordas/interior e escala dos canais. O relatório 78 encontrou similaridade
+  espacial adjacente mediana de 0,621 no sinal, mas não demonstrou quanto dessa
+  estrutura sobra no erro. Medir ganho de previsão fora do trecho de ajuste e
+  distinguir contexto original de contexto disponível no decoder. Um diagnóstico
+  com acesso ao original não constitui um codec nem um limite de compressão.
+- Auditar exposição e ponderação de tiles por tamanho/configuração: uma atualização
+  por janela no treino não equivale à ponderação por células na validação. Medir
+  perdas e contribuições de gradiente antes de propor outro sampler, preservando
+  todas as regiões. Esse diagnóstico é distinto do balanceamento familiar antigo.
 
-**Critério de passagem:** uma hipótese testável para a limitação, apoiada em resultados
+#### E1 — escolha dos índices com modelo congelado e ampliação da avaliação
+
+**Pergunta:** existem códigos que o decoder atual reconstrói melhor, no mesmo
+orçamento, mas que o encoder/nearest-neighbor não seleciona?
+
+- Fixar pesos, codebook, normalização, side e geometria. Selecionar uma amostra
+  pequena por metadados, cobrindo configurações e tamanhos; definir método e limite
+  de busca no treino antes de avaliar na validação.
+- Partir dos índices atuais e buscar alternativas discretas orientadas pela
+  distorção após o decoder. Relaxações podem auxiliar a busca, mas a avaliação
+  usa exclusivamente embeddings exatos recuperados dos índices transmitidos.
+- Comparar primeiro empacotamento fixo de 11 bits e mesma contagem de índices;
+  depois impor teto de bytes reais, pois mudar símbolos pode alterar seu custo
+  entrópico. Reportar tempo de codificação e ganhos por configuração/canal.
+- O original está disponível ao encoder; o decoder recebe apenas o stream.
+  Preservar os índices iniciais como candidato. Como há GroupNorm no decoder,
+  avaliar a reconstrução completa, sem presumir efeito estritamente local.
+
+**Decisão de E1:** ganho relevante e repetido a orçamento preservado justifica
+investigar encoder, destilação da busca ou quantização orientada à distorção.
+Sem ganho no orçamento predefinido, encerrar essa busca e registrar sua limitação
+heurística; não inferir optimalidade nem impedir a hipótese E2. A preservação do
+objetivo por escolha do melhor candidato no encoder não garante outras métricas.
+
+Os pilotos do relatório 78 encontraram oportunidade, mas também regressões locais
+de p90 por canal. A guarda predefinida foi verificada em recortes adicionais,
+mas ainda não em novas aquisições. A continuidade de E1 deve ampliar essa
+avaliação; o ganho agregado sem guarda não substitui os requisitos generalistas.
+No relatório 79, filtrar candidatos durante a busca elevou o ganho para cerca
+de 4%, sem mudar pesos. Sua promoção ainda requer avaliação ampliada e custo
+de codificação; não confundir esses recortes com a validação completa dos encoders.
+
+**Próxima avaliação de E1:** fixar no treino método, guardas e orçamento de busca;
+comparar origem, Controle, Rate-sharp e busca a partir da origem nos mesmos
+recortes de validação, estratificados por configuração/tamanho. Reutilizar métricas
+e frames existentes quando compatíveis. Medir ganho por arquivo/configuração,
+fração de fallback, amplitude/fase/espectro e tempo/memória de codificação, com
+condições de hardware comparáveis. Uma pequena curva de orçamento de busca pode
+medir retorno por compute, sem escolher novos hiperparâmetros na validação.
+Ampliar para a validação completa apenas se ganho/custo justificarem essa despesa.
+Depois, confirmar com referência própria da outra coorte; isso ainda é
+desenvolvimento, não aquisição externa independente.
+
+Os ~4% atuais sustentam uma avaliação delimitada da oportunidade, não uma campanha
+longa de destilação: continuam abaixo do alvo exploratório de 5%. Se a comparação
+pareada confirmar uma lacuna material, um piloto curto de aprendizado das escolhas
+da busca pode ser proposto, com alvos gerados somente no treino e controle de mesma
+exposição. Concordância com índices do professor não basta: medir reconstrução,
+bytes e custo contra encoder original, controle treinado e busca direta. Se o
+benefício continuar marginal ou muito caro, preservar E1 experimental e encerrar
+sua expansão; uma busca heurística não estabelece o teto do decoder.
+
+**Evidência pareada local já disponível:** `paired_e1_residual_local_v2_20261102/`,
+em `results/experiments/`, compara origem, Controle, Rate-sharp e busca em
+63 recortes/51 arquivos de validação, com as mesmas tabelas e teto da origem.
+RMSE macro: **0,644823 / 0,640710 / 0,640117 / 0,618596**, respectivamente,
+considerando as políticas com guarda. A busca ganha **4,067% contra origem** e
+**3,362% contra Rate-sharp**, mas usa 97.132 bytes de frames contra 97.078 do
+Rate-sharp: o teto é comum, não igualdade exata de bytes entre esses dois braços.
+Controle usa 97.243; origem, 97.375. Não converter frames isolados em razão completa.
+Nenhuma violação das guardas por janela; o ganho de busca versus Rate-sharp ocorreu
+na agregação de 49/51 arquivos amostrados, não em novas aquisições independentes.
+O p90 macro cai de 1,023091 para 0,979976 com a busca.
+
+Na RTX 4060 local, os totais medidos foram ~91,8 s para a busca e ~2,4 s para
+cada encoder; a política com guarda dos encoders ainda exige avaliar a origem.
+Incluem codificação/replay/métricas, com recomputação de ativações na busca;
+não são benchmark isolado de forward ou prova de tempo real. Pico alocado ~2,40 GB.
+As guardas não cobrem tudo: a busca piorou magnitude FFT em 7/63 recortes, fase
+em 1/63 e distância da razão RMS a 1 em 44/63. Não promover só pela média de RMSE.
+
+**E0 do residual também executado, apenas no treino:** 135 recortes/105 arquivos,
+11 configurações, sem atualização de pesos. O probe espacial com residual original
+do canal vizinho e avaliação na metade temporal posterior encontrou ganhos medianos
+por configuração de ~0 a 28,2% após E1. São dependências otimistas, não economia
+de bits nem ganhos de codec: o decoder não tem esse residual original. A próxima
+pergunta é se a estrutura pode ser explorada com informação decodificada e custo
+explícito, e onde o erro está concentrado; não lançar outra CNN genérica por isso.
+Seis recortes constantes têm correlação indefinida e mantêm o frame original;
+erros relativos com denominador quase nulo dominam a macro de treino, que não deve
+ser usada como medida do ganho aprendido. Erro absoluto e cobertura permanecem
+registrados; os 63 recortes de validação não têm essa indefinição de correlação.
+
+A auditoria complementar `residual_boundary_energy_local_20261102/` separa bordas
+espaciais/temporais e controla a energia do alvo. Em várias configurações, o erro
+alto de borda não implica pior erro relativo; em single-mode 12/4/5, porém, as
+medianas da razão de potência relativa do erro borda/interior após E1 são
+~11,69/~22,75/~2,50. Isso prioriza investigar canais fracos e síntese nas bordas
+espaciais nesses grupos; **não prova causalidade do padding**. Nas bordas temporais,
+as medianas correspondentes ficam aproximadamente entre 0,95 e 1,09. Não há aqui
+justificativa para overlap temporal longo como correção generalista.
+
+Os códigos em `finetuning/paired_search_diagnostics.py`,
+`finetuning/summarize_paired_search.py` e `finetuning/audit_residual_boundaries.py`
+preservam protocolos, hashes, frames e métricas. A primeira tentativa interrompeu
+em um tile constante; seus artefatos foram preservados, e o protocolo corrigido
+registra explicitamente indefinições e fallback, sem alterar guardas históricas.
+**Decisão:** manter E1 experimental, sem destilação longa ou novo treino automático;
+priorizar o mecanismo espacial/denominadores acima antes de selecionar um piloto.
+
+**Atualização após os contrastes locais posteriores:** o relatório 79, seção 8,
+registra os testes sugeridos. Correção espacial ganhou apenas 0,0068% contra o
+controle pontual, e reversão/replicação de padding recuperaram 0,055% contra origem.
+O erro de borda nas configurações single-mode 12/4/5 não se limitou a canais
+classificados como fracos pela regra diagnóstica; isso não prova causalidade do
+padding. Não ampliar esses pós-processamentos. Em 63 recortes adicionais, E1
+ganhou 4,83% com a guarda histórica e 1,30% com uma guarda aninhada que também
+protege FFT, fase e distância da razão RMS a 1. A histórica piorou esta última
+métrica em 51/63 janelas. Priorizar requisitos físicos e proveniência independente
+antes de destilação ou nova campanha estrutural; não usar as guardas adicionais
+para reinterpretar retroativamente os estudos anteriores.
+
+**Critério geral da etapa 3:** uma hipótese testável para a limitação, apoiada em resultados
 por grupo. Os relatórios 1–6 fornecem controles; nenhum teste de memorização serve
 como demonstração de generalização ou de bitrate competitivo.
 
@@ -234,6 +401,23 @@ difíceis do alvo para aproximá-lo artificialmente do domínio OOI.
 - Distribuição do orçamento de latentes entre canais e tempo, comparando grades
   de mesma taxa real/nominal quando possível. Padding compensatório deve ser
   versionado e restaurável, sem retirar canais/bandas do alvo.
+- **E3 — contexto físico maior/condicional:** se E0 indicar dependência aproveitável,
+  comparar janelas independentes com maior contexto contínuo e/ou condicionamento
+  em histórico já decodificado, mantendo orçamento por célula/segundo. A janela
+  FEBUS atual de 1.000 amostras a 20 kHz contém 50 ms; dilatação interna não oferece
+  informação temporal fora desse intervalo.
+- Extrair contexto maior dos HDF5 com continuidade e overlap verificados; não
+  concatenar NPZ separados por intervalos como se fossem contíguos. Preservar
+  bandas/amostras e cobrar reinicializações, side e estado transmitido.
+- Separar contexto para probabilidades de contexto para síntese. Encoder e decoder
+  devem compartilhar o mesmo histórico reconstruído; avaliar início de arquivo,
+  propagação de erro, mudanças abruptas, latência e acesso aleatório.
+
+**Decisão de E3:** avançar com melhora da curva em bytes completos e contexto
+reproduzível no decoder, confirmada por configuração. Se a dependência observada
+ou o ganho líquido não justificar o custo, encerrar o piloto sem ampliar contexto
+automaticamente. O mecanismo pode ser convolucional/recorrente; atenção não é
+pré-requisito, e contexto maior não garante reconstruir inovação imprevisível.
 
 **Critério de passagem:** ganho de fidelidade sem redução oculta do conteúdo avaliado.
 Resampling exige antialiasing e uma especificação explícita de quais bandas devem
@@ -275,12 +459,35 @@ de congelamento como solução universal.
 - Curvas de escala de dados por aquisições/configurações inteiras, inicialmente
   25%, 50% e 100% dos grupos disponíveis no treino, com estratos preservados quando
   viável; não partir arquivos correlacionados só para atingir essas frações.
-  Comparar pelo menos o controle e a rede maior, validação fixa e exposição
-  registrada; controlar updates e analisar também passes/convergência.
+  Comparar a referência e o candidato de representação priorizado, validação fixa
+  e exposição registrada; controlar updates e analisar também passes/convergência.
 - Medir duração única, canais/metros úteis, eventos/regimes e diversidade espectral,
   além de janelas. Não converter contagens de imagens ou horas de áudio da literatura
   em uma regra de amostras por parâmetro para DAS. Novas aquisições independentes
-  são prioridade de generalização, sem bloquear um piloto de capacidade no corpus atual.
+  são prioridade de generalização, sem bloquear triagem de representação no corpus atual.
+
+**Preparação externa executada, sem avaliar sinais:** os 108 arquivos de
+`DAS/EDAS Comparison` são distintos entre si e dos 207 de desenvolvimento por
+ID/MD5/tamanho. A inspeção limitada de headers/clocks de todos os 315 HDF5 não
+encontrou coincidência de início de aquisição ou sobreposição dos intervalos de
+clock candidato/desenvolvimento sob a convenção temporal declarada. Os 108
+candidatos têm strain rate, 20 kHz, 0,2 m e gauge length 1 m nos metadados.
+Isso não prova independência física/eventual ou ausência de processamento comum.
+
+Os candidatos devem ser mantidos em **três grupos conservadores**, cada um com
+36 arquivos e ambas as orientações: SMF, EDAS Polyimide e EDAS Acrylate, agrupados
+por instrumento/`AcqStartTime`. **Seis pastas ou 108 arquivos não equivalem a
+108 aquisições independentes.** A reserva e os intervalos estão em
+`results/experiments/external_acquisition_metadata_full_20261102/provenance_summary.json`;
+hashes e headers brutos estão nos diretórios associados do relatório 79.
+O grupo SMF foi posteriormente consumido em seis trechos de um segundo e passa
+integralmente a **desenvolvimento externo**, inclusive os 30 arquivos não lidos.
+Os grupos EDAS Polyimide/Acrylate permanecem sem avaliação de formas de onda.
+Antes de declarar holdout final, verificar proveniência experimental, acesso
+exploratório anterior, convenção dos clocks e adequação às famílias pretendidas.
+Essa coleção não valida externamente as quatro famílias originais. Os sinais SMF
+foram usados para diagnóstico e desenvolvimento de codificação congelada, sem
+treinar pesos neurais; nenhum split final ou modelo operacional foi declarado.
 
 **Critério de passagem:** evidência de diversidade adicional útil ou justificativa
 explícita para preencher uma lacuna. GB brutos, inclusive de OOI, não diagnosticam
@@ -316,24 +523,23 @@ trade-off custo/fidelidade. Não usar seleção oracle pelo erro contra o origin
 no teste, nem tratar pesos de memorização dos relatórios 5–6 como especialistas
 generalizáveis. Média de reconstruções pode suavizar o sinal e exige validação.
 
-### Etapa 8 — Arquitetura, quantização e treino do zero
+### Etapa 8 — Eficiência de representação, arquitetura e quantização
 
-**Objetivo:** testar limites de capacidade/taxa quando dados, representação e
-otimização estiverem adequadamente controlados.
+**Objetivo:** melhorar a curva fidelidade–bits com representação, otimização e
+capacidade controladas. E2, na etapa 8A, permanece uma hipótese de treinamento,
+cuja prioridade depende do diagnóstico da seção 5; os controles A/B/C e de escala
+já realizados são referências para essa investigação.
 
 **Entregáveis a desenvolver/validar:**
-- **Escala de capacidade a taxa fixa:** controle ~28M e alvo ~100M (faixa de projeto
-  80–120M); ponto intermediário ~50M se necessário para diagnosticar tendência/custo.
-  Esses tamanhos são hipóteses de engenharia, não ótimos demonstrados para DAS.
-  Começar no ponto compacto já controlado, preservando grade por shape, K=2.048,
-  dimensão 128, 11 bits por índice, normalização, filtro, objetivo e cobertura.
-  Mais largura interna não pode aumentar silenciosamente o número de tokens.
-- Escalar primeiro profundidade/largura de uma mesma família residual, investindo
-  em processamento em resolução reduzida; avaliar uma expansão do decoder ou
-  blocos de contexto como ablação posterior. Atenção, se testada, deve operar em
-  tokens reduzidos/janelas/eixos fatorizados, não em atenção global de todos os
-  512×1.000 pontos. Contar parâmetros por encoder/decoder/quantizador/modelo de
-  probabilidade; aumentar o preditor entrópico não equivale a aumentar o reconstrutor.
+- **Capacidade como hipótese condicional:** o contraste ~28M/~100M já mostrou
+  retorno modesto. Outra escala requer evidência de onde investir capacidade,
+  como encoder, decoder ou contexto, com contraste isolado a taxa fixa. Em uma
+  ablação de largura VQ, preservar grade, K/dimensão, normalização, objetivo e
+  cobertura; mais largura não pode aumentar silenciosamente o número de tokens.
+- Atenção, se testada, deve operar em tokens reduzidos/janelas/eixos fatorizados,
+  não em atenção global de todos os 512×1.000 pontos. Contar parâmetros por encoder,
+  decoder, quantizador e modelo de probabilidade; aumentar o preditor entrópico
+  não equivale a aumentar o reconstrutor.
 - Separar capacidade de inicialização: controles pequeno/grande do zero para o
   contraste causal, mantendo A transferido como referência prática. Uma expansão
   inicializada dos pesos offshore pode ser outro contraste apenas após validar
@@ -349,19 +555,17 @@ otimização estiverem adequadamente controlados.
 - Comparação controlada de referência transferida, mesma arquitetura do zero e
   variante arquitetural do zero no corpus fixo. Parear taxa, objetivo, exposição
   adicional e capacidade quando possível; declarar compute histórico não pareado.
-- Para a variante FEBUS, testar processamento espacial/temporal anisotrópico e
-  contexto multiescala, respeitando contiguidade, organização de núcleos, posições
-  e shapes variáveis. Não importar um decoder denso de ciclo fixo como se canal–tempo
-  fosse uma sequência elétrica periódica de dimensão equivalente.
-- Especificar diferenças concretas de C frente à CNN residual nativa e à variante
-  temporal dilatada já testada: blocos, campo receptivo e redução/reconstrução por
-  eixo. “Deep CNN” ou mudança de nome não são evidência de arquitetura nova.
+- Qualquer nova variante FEBUS deve explicitar diferenças frente à CNN nativa,
+  à temporal dilatada e à anisotrópica multiescala já testadas: blocos, campo
+  receptivo físico e redução/reconstrução por eixo. Respeitar contiguidade, núcleos,
+  posições e shapes variáveis; “Deep CNN” não define por si só uma hipótese nova.
 - Atenção CNN–Transformer é ablação opcional após redução de tokens ou fatorização
   por eixo. Comparar à CNN sem atenção, com taxa/capacidade/compute explícitos;
   bons resultados de identificação não demonstram ganho de reconstrução.
-- Preservar K/dimensão do quantizador na primeira comparação sempre que viável e
-  usar pontos de taxa comuns, incluindo regime compacto. O decoder não pode
-  receber skips/features contínuos do encoder sem codificá-los e cobrar seu payload.
+- Preservar K/dimensão em contrastes de arquitetura VQ. Entre famílias de
+  quantização, parear bytes completos e curvas, não contagem de tokens. Incluir
+  regime compacto; todo skip/feature do encoder necessário ao decoder deve ser
+  codificado e cobrado.
 - Inicialização do codebook somente com treino e diagnóstico de perplexidade,
   utilização e perdas separadas. Colapso de otimização não prova falta de capacidade.
 - Ablações de reativação/atualização de códigos com controle de mesma arquitetura,
@@ -372,18 +576,17 @@ otimização estiverem adequadamente controlados.
 - Ablações de strides, capacidade, codebook, quantização residual/multiescala e
   condicionamento físico, sem alterar todos os componentes simultaneamente.
 - Curvas rate-distortion que incluam custos reais de codificação e decodificação.
-- **Codificação entrópica dos índices:** estimar redundância marginal e condicional
-  com dados de treino; comparar empacotamento fixo e entropy coding em índices
-  congelados antes de alterar o quantizador. Exigir bitstream decodificável e
-  índices idênticos. Contexto usa somente símbolos/metadados disponíveis ao decoder;
-  contabilizar tabelas, modelos, headers e latência. Hiperprior é etapa posterior
-  com side cobrado, não atalho sem custo.
-- **Quantização, somente em ablação própria:** manter VQ atual no estudo de escala;
-  depois comparar K=1.024/2.048/4.096 (10/11/12 bits por índice) com curvas de taxa,
-  não como taxas iguais. Dimensão do embedding não é quantidade de bits transmitidos.
-  FSQ é candidato para estabilidade, não solução comprovada para FEBUS; RVQ é
-  candidato a refinamento, cobrando cada índice de cada estágio. Não repetir
-  reativação de códigos apenas porque a utilização é baixa.
+- **Codificação entrópica dos índices:** usar o melhor stream existente como
+  controle. Os estudos congelados já mediram redundância marginal/condicional;
+  novos ajustes exigem potencial adicional demonstrado e custo líquido explícito.
+  Exigir índices idênticos no roundtrip, contexto disponível ao decoder e cobrança
+  de tabelas, pesos, headers e latência. Economia pós-treino e aprendizado conjunto
+  de representação/taxa são hipóteses distintas.
+- **Quantização em ablação própria:** priorizar o contraste da etapa 8A. Mudanças
+  de K, FSQ e RVQ permanecem condicionais, com curvas e cobrança de cada estágio.
+  Dimensão do embedding e ocupação do codebook não medem fidelidade por bit.
+  O FSQ residual já testado não equivale a um codec escalar conjunto; refinamento
+  do erro com base congelada não equivale a RVQ latente treinada ponta a ponta.
 - Controles clássicos históricos podem contextualizar as curvas, sem condicionar
   a investigação neural a um novo benchmark clássico ou substituí-la por codec clássico.
 - Fronteira não dominada de checkpoints em erro, amplitude, fase, piores canais
@@ -394,13 +597,84 @@ taxa, ou melhoria demonstrada da curva rate-distortion. A vantagem de um latente
 contínuo não demonstra vantagem de compressão sem um codec/taxa equivalentes.
 Dados e arquitetura podem ser investigados conjuntamente, mas com ablações separáveis.
 
+### Etapa 8A — E2: aprendizado conjunto de taxa–distorção
+
+**Objetivo:** aprender a representação junto com o custo de transmiti-la, mantendo
+o sinal físico completo como alvo. A próxima execução depende de uma hipótese
+isolada; não é continuação obrigatória dos pilotos encerrados.
+
+**Primeira implementação já avaliada:** o relatório 78 registra o codec escalar
+fatorizado e seis braços, sem avanço suficiente frente aos controles pareados.
+O relatório 79 isolou ponderação e gradiente de taxa no encoder VQ, congelando
+decoder/codebook: ganhos ficaram abaixo do critério de investimento. Temperatura
+mais nítida ajudou o estimador, mas não mudou o patamar. Não repetir esses treinos
+nem tratá-los como teste de todo o aprendizado conjunto. Uma nova proposta deve
+isolar representação/quantização ponta a ponta com controles pareados e auditoria
+proxy/hard/bytes; hyperprior depende de evidência de que seu side/custo se paga.
+
+MSE/L1 + VQ é uma formulação válida com grade e custo nominal fixos. A hipótese nova
+é melhorar a curva com entropy coding, permitindo que a taxa também influencie
+o encoder; um prior treinado sobre índices congelados não testa esse mecanismo.
+
+**Referências já avaliadas e exigências para uma nova proposta:**
+- Referências práticas: VQ compacto/denso, seus streams e os pilotos escalares
+  concluídos. A seleção de modos VQ do relatório 78 usa dois modelos e teto global
+  por coorte: é controle prático, não comparação causal de quantizadores nem
+  política online por arquivo. Um novo protocolo deve fixar um contrato comum.
+- **Coadaptação sob custo de taxa já triada:** partir do mesmo VQ funcional,
+  liberando encoder/decoder/codebook nos dois braços, objetivo histórico versus
+  o mesmo objetivo com taxa, foi executado na RTX 4060: 1.024 updates por braço,
+  mesma exposição e prior congelado. Ambos selecionaram o passo 256; Rate ganhou
+  apenas **0,0547% de RMSE com guarda** e economizou **0,906% nos frames** contra
+  o controle. Proxy, custo duro e bytes melhoraram juntos, sem salto de fidelidade.
+  Não promover nem repetir essa continuação. É uma triagem curta, não refutação
+  de toda coadaptação/prior adaptativo. Cada candidato requer seu próprio
+  decoder/codebook; o fallback cobra modo e disponibilidade de dois modelos.
+  A política de decoder único do encoder-only não se transfere intacta.
+- Usar `L = D(x, x_hat) + lambda * R`, com `R` em bits por célula retida, quando
+  o contraste for taxa–distorção. Uma nova família escalar/FSQ/RVQ precisa declarar
+  o mecanismo diferente dos pilotos já realizados e seu controle; simplesmente
+  trocar o nome do quantizador ou aumentar a exposição não constitui hipótese nova.
+- Hyperprior só recebe prioridade se houver evidência de custo condicional
+  recuperável nos latentes, com side e modelo cobrados. A economia potencial não
+  pode ser inferida apenas da correlação espacial do sinal de entrada.
+- Verificar que o termo de taxa fornece gradientes ao encoder: cross-entropy sobre
+  índices inteiros de `argmin` não cria esse caminho automaticamente. Avaliar a
+  consistência entre relaxação de treino, quantização discreta e stream real.
+- Quantizar e serializar todos os coeficientes e parâmetros necessários; medir
+  diferença entre bits estimados e bytes efetivos, incluindo normalização, escapes,
+  mapas, container e custo compartilhado dos modelos.
+- Construir curva pequena com pontos sobrepostos aos controles no **mesmo
+  transporte**: ~0,19/~0,70 bit/célula são referências de streams históricos;
+  no pacote explícito do relatório 78, compacto/denso custam ~0,261/~0,790.
+  Separar símbolos, side e transporte evita atribuir overhead à quantização ou
+  comparar razões incompatíveis. Investigar 0,10 bit/célula em extensão justificada;
+  700× sobre float32 corresponde a ~0,0457 bit/célula e permanece meta exploratória.
+- Parear bytes e exposição quando possível; declarar inicialização/pré-treino e
+  compute histórico. Isolar mudanças adicionais de backbone, loss e amostragem.
+
+**Critério de avanço:** melhora relevante e reproduzida da curva em bytes reais,
+com inspeção das quatro famílias/configurações, caudas, amplitude e fase. A seção 4
+separa critérios de investimento de tolerâncias físicas. Hyperprior avança somente
+se seu side/custo total se pagar frente ao prior fatorizado.
+
+**Critério de encerramento:** ao fim do orçamento e extensões predefinidos, ausência
+de melhora da fronteira ou ganhos restritos ao estimador de taxa não justificam
+escalar a rede. Registrar também falhas de otimização/calibração; elas limitam a
+conclusão sobre o piloto, não demonstram impossibilidade de toda a família de codecs.
+
 ### Etapa 8B — ROI espaço-temporal e refinamento neural com orçamento limitado
 
 **Objetivo:** melhorar a distribuição dos bits sem abandonar a reconstrução de
 toda a região útil. ROI significa priorizar sinal válido; não substitui nem
 altera a máscara heurística de canais inadequados.
 
-**Entregáveis a desenvolver/validar:**
+**Prioridade reduzida:** os estudos de troca de modo, residual VQ/FSQ e híbrido
+pareado em bytes já mostraram ganhos limitados e trade-offs de cauda. Retomar
+somente com nova hipótese de representação/alocação e benefício potencial sobre
+esses controles; repetir refiners ou retunar o seletor não é a sequência padrão.
+
+**Entregáveis condicionais à retomada:**
 - Camada neural básica global e refinamento residual quantizado em tiles
   selecionados. Alternativamente, mapas de qualidade condicionam o codec;
   essa alternativa deve ser comparada separadamente, sem assumir equivalência.
@@ -462,26 +736,43 @@ dados como evidência de generalização; o holdout externo permanece fora do tr
    arquivo ou configuração como cluster; janelas correlacionadas não são réplicas
    independentes para intervalos de confiança.
 6. **Medir o codec, não só o modelo:** incluir índices VQ, codificação entrópica,
-   escapes, normalização, mapas espaciais, roteamento e container na taxa efetiva.
+   coeficientes/hyperlatentes de outros quantizadores, escapes, normalização,
+   mapas espaciais, roteamento e container na taxa efetiva. Comparar bits por
+   célula retida e bytes totais; separar pesos compartilhados e sua amortização.
 7. **Registrar decisões verificáveis:** uma alteração avança quando seu entregável
    e critério são satisfeitos; resultados negativos justificam mudar a hipótese,
    não aumentar automaticamente o tempo de treino.
+8. **Fixar critérios antes do piloto:** orçamento, extensões, ganho mínimo e
+   tolerâncias concorrentes. Como referência de investimento a confirmar no
+   protocolo, o relatório 77 sugere ≥5% de redução relativa de RMSE a bytes não
+   maiores, ou ≥10% de economia a fidelidade equivalente segundo tolerâncias
+   predefinidas, com confirmação em outra coorte. São propostas de priorização,
+   não limiares físicos validados ou testes de significância. Preservar as
+   guardas históricas e distinguir triagem, confirmação e promoção operacional.
 
 ## 5. Dependências e caminhos condicionais
 
 ```text
-Requisitos e avaliação → integridade/pipeline → baselines e diagnóstico
+Requisitos e avaliação → corpus íntegro → controles existentes A/B/C, escala e streams
                                                ↓
-                     controles A/B/C → escala ~28M / ~100M em taxa compacta fixa
+                     E1 pareado + E0 do residual: ganho, estrutura e custo
                                                ↓
-                     ┌──────────────────────────┼──────────────────────────┐
-                     ↓                          ↓                          ↓
-          Lacuna de diversidade      Trade-off entre grupos       Limite de capacidade/taxa
-                     ↓                          ↓                          ↓
-          Dados FEBUS-like           ROI + piso global             Capacidade/contexto/quantização
-                     └──────────────────────────┼──────────────────────────┘
+                     contrastes locais concluídos: correção, padding e full-VQ RD
                                                ↓
-                             seleção robusta → auditoria externa → modelo final
+                     ganho marginal + E1 sensível às métricas protegidas
+                                               ↓
+                     requisitos físicos + proveniência/holdout independente
+                                               ↓
+                     nova hipótese somente com mecanismo/controle adicional
+                                               ↓
+                     triagem em índices duros, bytes completos e fidelidade física
+                                               ↓
+                     confirmação por configuração/seed → auditoria externa → modelo final
+
+Caminhos condicionais: E3 (contexto maior, se houver dependência aproveitável)
+                      dados FEBUS-like (lacuna de diversidade)
+                      hyperprior / capacidade / ROI (nova hipótese sustentada)
+Em paralelo: proveniência de novas aquisições e reserva do holdout externo
 ```
 
 As ramificações não são mutuamente exclusivas. Retornar ao diagnóstico sempre que
@@ -509,31 +800,78 @@ automática a novas famílias ou um desvio obrigatório para reconhecimento OWR.
 Esse caminho refina as etapas 3, 5 e 8; não substitui requisitos de aceitação nem
 a auditoria externa da etapa 9.
 
-### Investigação estrutural sem mudança simultânea de corpus
+### Sequência prioritária após os relatórios 77–79
 
-Quando ganhos incrementais não aproximarem a fidelidade dos requisitos da aplicação,
-investigar a etapa 8 sem exigir novas continuações inalteradas da etapa 5. Manter
-uma referência fixa e comparar arquitetura/inicialização no mesmo corpus; ampliar
-dados em estudo separado da etapa 6. Após os controles A/B/C, a ordem preferida é:
+**Leitura dos resultados:** o redirecionamento para fidelidade por bit continua
+válido, mas a evidência favorece primeiro localizar o ganho recuperável, em vez de
+abrir outra campanha genérica de quantização. E1 recuperou ~4% com guarda nos
+pilotos; Rate-sharp ganhou apenas 0,115% contra Controle, e Cell apenas 0,0184%
+com cerca de 54,5% mais células processadas. O escalar funcional demonstrou troca
+entre taxa e erro, mas não superou RMSE/caudas do controle VQ a bytes pareados.
+No ponto intermediário, sua correlação foi melhor: há trade-off, não dominância
+universal do VQ nem razão para ignorar as outras métricas.
+Isso reduz a prioridade dessas intervenções específicas, sem provar um limite
+informacional, da quantização escalar ou do aprendizado conjunto.
 
-1. Testes de shape, gradiente, memória, compatibilidade e taxa dos candidatos.
-2. Escala da família residual até ~100M, preservando o ponto compacto e separando
-   capacidade de inicialização; A transferido permanece referência prática.
-3. Orçamento adicional ou ablação de otimização quando não houver convergência,
-   antes de concluir inferioridade estrutural.
-4. Confirmação por seed/grupo de candidatos que melhorem a fronteira de fidelidade.
-5. Ampliação de aquisições quando houver evidência de lacuna de diversidade,
-   preservando protocolo fixo e holdout externo.
+**Os contrastes locais dessa sequência já foram executados**, conforme a seção 8
+do relatório 79: quatro braços neurais com orçamento limitado, alternativas
+congeladas de orientação/padding e comparação de guardas físicas E1. Nenhum
+atingiu o critério de investimento. A continuação não é repetir essa fila.
 
-Codificação entrópica congelada pode ser investigada independentemente da escala,
-sem alterar os símbolos nem o contraste de capacidade. ROI vem em estudo próprio
-após uma base codificável controlada; novos quantizadores e atenção não são
-acoplados ao primeiro teste de 100M. Se houver ganho compacto, construir curva
-com pontos progressivamente mais comprimidos, incluindo a geometria offshore
-original como controle. **700× é uma meta exploratória, não um resultado previsto.**
+1. **Requisitos físicos — prioridade imediata de decisão.** Fixar com o uso
+   pretendido os limites concorrentes de erro absoluto/relativo, amplitude,
+   fase, bandas e canais fracos. Sem restauração afim, E1 com guardas aninhadas
+   reteve ~1,30% contra 4,83% no seletor histórico; o formato afim posterior
+   chegou a 3,70% em desenvolvimento, mas transferiu pouco ao SMF. Não retunar tolerâncias na
+   validação para recuperar o número maior. As desigualdades diagnósticas exatas
+   não substituem limites físicos nem alteram admissões históricas.
+2. **Aquisições independentes — preparação antes de mais seleção no mesmo corpus.**
+   Concluir proveniência e compatibilidade dos candidatos externos, mantendo
+   orientações, reprocessamentos e registros relacionados na mesma partição.
+   Os 108 hashes distintos não garantem independência; não declarar holdout
+   apenas porque os IDs/pastas diferem. O SMF já foi consumido por diagnósticos
+   e testes congelados; todo esse grupo é desenvolvimento externo. Preservar os
+   dois grupos EDAS sem avaliação de formas de onda até protocolo próprio.
+3. **Nova representação — hipótese aberta, não treinamento já escolhido.**
+   A correção local a partir de saídas decodificadas e a coadaptação VQ com prior
+   congelado tiveram retorno marginal. Uma nova proposta precisa explicitar
+   como preserva informação espacial/física que os controles perdem, ou qual
+   redundância latente permite reduzir custo líquido. Distinguir isso de um
+   pós-filtro, mais largura, nova temperatura ou continuação do mesmo objetivo.
+   O negativo do piloto curto não refuta toda arquitetura ou treino conjunto.
+4. **E1 permanece referência experimental, não caminho automático de destilação.**
+   Preservar frames, custos e guardas; aprender a busca só recebe prioridade se
+   houver ganho útil sob o compromisso físico escolhido, com custo menor e
+   confirmação fora dos recortes consultados. A estrutura do residual original
+   não equivale a contexto disponível no decoder ou a um limite informacional.
+   OLS limitado mantém os mesmos campos transmitidos e recuperou ganho interno,
+   mas o controle E1 denso no SMF ganhou só 0,1925% a bytes não maiores.
+5. **Confirmação antes de expansão.** Aplicar protocolo congelado a um candidato
+   realmente promissor; manter ≥5% de RMSE ou ≥10% de economia como referências
+   de investimento da seção 4, sem transformá-las em tolerâncias físicas.
+   Sem hipótese sustentada, encerrar orçamento em vez de iniciar mais treinos.
+   E3 longo, hyperprior, sampler, largura e ROI seguem condicionais a evidência
+   adicional e a controles de bytes, dose, generalização e custo de implantação.
 
-Não alterar arquitetura, inicialização, objetivo e dataset ao mesmo tempo nem
-apresentar vantagem de uma triagem como prova de fidelidade suficiente.
+**Estado após a rodada afim/full-zone:** o controle de cobertura é diagnóstico,
+não produto que entrega todas as linhas. O FPB1 que codifica todas as regiões
+e NaNs não admitiu candidatos: no denso, 5,39% menos RMSE veio com 5,15% mais
+bytes de bundles e RMS pior. Não usar esse ponto como avanço a orçamento igual.
+Os formatos exatos para não finitos resolveram integridade/overhead, não a
+fidelidade neural ordinária. A próxima proposta estrutural deve controlar a
+fatoração número de índices × bits por símbolo, inicialização e bytes reais,
+ou apresentar outro mecanismo novo; não repetir os ramos encerrados.
+
+Manter corpus/cobertura comuns na comparação principal; ampliação de dados é
+estudo separável. Outro aumento de largura, refiner ou ajuste lossless requer
+uma hipótese adicional, não apenas o esgotamento do orçamento anterior. Um prior
+congelado negativo não descarta aprendizado conjunto; mais estados usados não
+comprovam eficiência de representação.
+
+Construir a curva com custos completos e pontos sobrepostos aos controles antes
+de estender para taxas mais agressivas. **700× é uma meta exploratória, não um
+resultado previsto nem requisito para iniciar a triagem.** A sequência define
+prioridades de pesquisa; séries adicionais exigem protocolo e orçamento próprios.
 
 ### Requisitos operacionais transversais
 
@@ -548,8 +886,9 @@ apresentar vantagem de uma triagem como prova de fidelidade suficiente.
 
 ## 6. Base bibliográfica e prioridades derivadas
 
-Revisão dirigida de artigos e projetos públicos, consultados em **29/10/2026**;
-não é revisão sistemática exaustiva. Fontes com texto/código acessível têm maior
+Revisão dirigida de artigos e projetos públicos, ampliada pela análise do
+[relatório 77](77-RESEARCH_DIRECTION_REVIEW.md); não é revisão sistemática
+exaustiva. Fontes com texto/código acessível têm maior
 força para escolhas de implementação do que resumos. Não foi identificada, nesta
 busca, demonstração de um codec neural único com avaliação conjunta nas quatro
 famílias FEBUS, nossos alvos físicos e nossas guardas de canais. Isso não prova
@@ -564,6 +903,7 @@ inexistência de trabalhos equivalentes.
 | [Ni et al. — Wavefield Reconstruction of DAS](https://doi.org/10.1029/2024JH000247). Resumo indexado; acesso integral bloqueado nesta revisão. | Compara INR e SHRED. Resumo relata generalização espaço-temporal de SHRED numa fibra com 20% dos canais e dificuldade em transientes de menor comprimento de onda; INR não generaliza sobre espaço/tempo. | Reforça verificar transientes/alta frequência e separar reconstrução de canais omitidos de codec que codifica todas as amostras. Não adotar INR ajustada por janela como generalista sem cobrar pesos e treino. |
 | [AI4EPS/ZipDAS](https://github.com/AI4EPS/ZipDAS). README e código `train.py`/`zipdas/model.py` consultados. | Codec neural baseado em Ballé 2017, quantização escalar e prior fatorizado; custo taxa–distorção e empacotamento entrópico. Defaults do trainer: 128 filtros e patches 1.024×1.024. | Demonstra implementação neural DAS com stream, não necessidade de um VQ específico. Defaults não são ótimo validado. O loader de treino/validação usa a mesma fonte de dados no código consultado; não importar o split como evidência de generalização. Auditar normalização/escala física ao adaptar. |
 | [Cullison, Li e Almomin — Stanford SEP-194, 2024](https://sep.sites.stanford.edu/publications/sep-reports/sep-194-2024), [projeto CAE](https://github.com/Haipeng-ustc/CS230-DAS-Compression). Resumo institucional e README. | CAE para DAS urbano; resumo descreve ~30× preliminares, redução de ruído e alterações em sinais quase estáticos. | Próximo no formato canal–tempo, mas denoising não é fidelidade ao bruto. Dataset disponível por contato, sem escala de treino reproduzível estabelecida aqui. |
+| [Pavelkin et al., ORCAS, preprint 2026](https://arxiv.org/html/2609.22140v1). Texto integral consultado na revisão do relatório 77. | Representação ortogonal aprendida e quantização/stream; avaliação precedida por filtragem e reamostragem para 100 Hz. | Contextualiza representação e contabilidade de bits, mas seus resultados não equivalem à reconstrução do bruto FEBUS 20 kHz. Não substitui a direção neural do projeto. |
 
 Artigos clássicos recentes servem **apenas como contexto dos protocolos**:
 [DASPack](https://doi.org/10.1093/gji/ggaf397) discute diversidade de 15 datasets
@@ -596,9 +936,38 @@ Kodak: não importar seus resultados como validação independente nem suas
 interpretações como teorema. A convergência útil entre os dois trabalhos é:
 **onde colocar capacidade e como treiná-la importa; 100M é hipótese, não ótimo.**
 
-**Bits por símbolo — aproveitar redundância, não só reduzir tokens.**
-[Ballé et al., ICLR 2018 — Scale Hyperprior](https://arxiv.org/abs/1802.01436)
-fundamentam modelagem probabilística com informação auxiliar cobrada. Em sinais,
+**Aprendizado conjunto — representação e custo de transmissão.**
+[Ballé et al., ICLR 2018 — Scale Hyperprior](https://arxiv.org/html/1802.01436v2)
+fundamentam quantização escalar e prior treinados junto às transformadas por
+taxa–distorção, incluindo o custo dos hyperlatentes. O código neural do ZipDAS
+oferece um precedente DAS com prior fatorizado; seu protocolo/normalização e
+nome de métrica `mse` (L1 no método consultado) exigem adaptação ao alvo FEBUS.
+Essa é a base de E2, distinta de comprimir índices congelados após o treino.
+
+[Jiang et al., RDVQ, CVPR 2026](https://arxiv.org/html/2604.10546v1) propõem uma
+distribuição suave baseada nas distâncias do codebook para fornecer gradiente de
+taxa ao encoder, mantendo VQ duro na reconstrução/codificação. Texto integral
+consultado no relatório 77. O mecanismo inspira o controle VQ de E2; GAN/LPIPS,
+completar índices omitidos e ganhos perceptuais do artigo não são adotados como
+evidência de fidelidade física FEBUS ou de superioridade à mesma taxa neste corpus.
+
+**Escolha dos códigos com modelo fixo.**
+[Yang, Bamler e Mandt, NeurIPS 2020 — Improving Inference for Neural Image
+Compression](https://arxiv.org/html/2006.04240v4) mostram ganhos ao otimizar a
+representação na codificação, preservando o modelo. Texto integral consultado.
+Fundamenta E1; adaptar a busca de latentes escalares para codebook VQ é hipótese
+experimental. Medir somente soluções discretas transmitidas e custo de busca.
+
+**Contexto temporal condicionado.**
+[Li, Li e Lu, NeurIPS 2021 — Deep Contextual Video Compression](https://arxiv.org/abs/2109.15047)
+motivam o uso de contexto de features em codificação condicional. Resumo e página
+oficial consultados no relatório 77. Para E3, transferir o princípio de histórico
+disponível ao decoder; não extrapolar economias de vídeo ou impor movimento óptico
+ao DAS. Contexto para síntese e contexto apenas para probabilidades são contrastes
+separados.
+
+**Bits por símbolo — aproveitar redundância com custos completos.**
+Em sinais,
 [Défossez et al., EnCodec, 2022/2023](https://arxiv.org/abs/2210.13438) e
 [código público](https://github.com/facebookresearch/encodec) usam RVQ: até 32
 codebooks de 1.024 entradas, 10 bits por estágio/símbolo; número de estágios
@@ -634,11 +1003,12 @@ visual, LPIPS/GAN ou texturas plausíveis como objetivos do sinal FEBUS.**
 
 | Eixo | Prioridade proposta | O que a literatura não permite concluir |
 |---|---|---|
-| Capacidade | Comparar ~28M com ~100M na mesma família residual e taxa compacta; ~50M é ponto diagnóstico opcional. | Não há tamanho ótimo publicado para nosso corpus; não prever recuperação de 700× por quadruplicar parâmetros. |
-| Arquitetura | CNN residual escalável; contexto em baixa resolução e multiescala. Atenção fatorizada é ablação posterior. | ViT/LSTM bem-sucedidos em uma aquisição não estabelecem vencedor entre as quatro fibras. |
-| Dados | Corpus auditado para o piloto; curvas por grupos inteiros e novas aquisições para robustez externa. | As 28.780 janelas preparadas dos 207 HDF5 não são 28.780 realizações independentes, nem todas pertencem ao treino. Não há fórmula validada de janelas por parâmetro. |
-| Quantização | Primeiro K=2.048, dimensão 128, mesma grade; depois entropia e ablações K/FSQ/RVQ isoladas. | Mais códigos usados ou maior dimensão latente não garantem mais informação útil por bit. |
-| ROI | Base global + refinamento residual local sob orçamento total, com mapa decidido no encoder e piso global. | Não garante economia se todas as regiões forem difíceis; ROI não deve esconder sinais fracos ou aumentar custo sem contabilização. |
+| Diagnóstico/codificação | Preservar E1/side afim experimental: até 3,70% sob guardas físicas no desenvolvimento, mas ~0,19% no SMF consumido; não ampliar destilação automaticamente. | Proteção por construção não é ganho nem aceitação operacional; guardas diagnósticas não são tolerâncias físicas, e recortes de um grupo não são réplicas independentes. |
+| Taxa–distorção/quantização | Full-VQ com/sem taxa já triado localmente, com ganho adicional marginal; nova representação exige mecanismo/controle adicional e auditoria proxy/hard/bytes. | A triagem curta com prior congelado não refuta todo aprendizado conjunto, outra quantização ou contexto. |
+| Contexto/arquitetura | Separar contexto/normalização/cobertura; a ablação no alvo comum foi positiva, mas a codificação de todas as faixas não passou bytes/RMS. E3 longo segue condicional. | Nem correlação residual, costuras temporais ou melhora após restringir o alvo provam vantagem de uma nova arquitetura full-zone. |
+| Capacidade | Retomada condicional em componente identificado pelo diagnóstico, usando os controles de escala existentes. | O ganho modesto de largura não refuta toda rede maior, nem sustenta repetir a mesma expansão. |
+| Dados/ponderação | Priorizar proveniência e reserva de aquisições independentes, preservando os contrastes de tiling encerrados. | Hashes e pastas distintos não garantem independência; mais janelas ou células não substituem diversidade de aquisição. |
+| ROI/refinamento | Prioridade reduzida; retomar com nova hipótese e comparação contra os modos já pareados em bytes. | O benefício residual contra a base não estabelece vantagem à mesma taxa; preservar cobertura global/caudas. |
 
 Uma regra para comparar eficiência é separar **contagem de índices**, **bits por
 índice** e **custos auxiliares**. No empacotamento fixo:
@@ -655,8 +1025,10 @@ O offshore ~744,73× com correlação ~0,9017 é referência motivadora do artig
 fornecido, não controle pareado: alvo, bandas, agregação, overhead e unidade física
 precisam ser harmonizados. Não estabelecer equivalência com RMSE denormalizado ou
 com a macro atual. A ordem inicial foi **capacidade a taxa fixa → confirmação
-por grupos/seeds → ROI com taxa total controlada**. Diante de ganho modesto sem
-preservação das caudas na expansão simples, priorizar agora **entropia dos índices
-congelados e ROI com controles de bytes**, sem repetir automaticamente aumento
-de largura. Contexto e diversidade permanecem hipóteses separadas. Requisitos físicos e auditoria externa acompanham essa
-investigação; não a substituem e continuam obrigatórios para promoção final.
+por grupos/seeds → ROI com taxa total controlada**. À luz dos estudos de escala,
+refinamento, streams e da continuação local do relatório 79, os contrastes de
+E1/residual, correção e coadaptação RD já foram triados. A sequência vigente é
+**compromisso físico + proveniência independente → nova hipótese mecanística
+justificada → confirmação**. Aprendizado conjunto e contexto permanecem opções,
+não novas execuções automáticas. A fundamentação e os resultados detalhados ficam
+nos relatórios 77–79; auditoria externa continua obrigatória para promoção final.
