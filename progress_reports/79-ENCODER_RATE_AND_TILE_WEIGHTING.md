@@ -1209,3 +1209,532 @@ mecanismo realmente distinto — por exemplo fatoração da grade/cardinalidade 
 bytes reais pareados, com inicialização/exposição controladas — e não repetir
 largura, samplers ou ganhos de side. Isso é hipótese futura, não experimento já
 agendado ou promessa de atingir 700× com alta fidelidade.
+
+## 10. Triagem de grade × cardinalidade e controles a bytes reais
+
+### 10.1 Hipótese e teste realizado
+
+A continuidade testou se distribuir o orçamento em **mais posições com menos
+bits por símbolo** melhora reconstrução/compressão, em vez de ampliar largura,
+taxa ou remover faixas difíceis. Foram concluídos quatro braços de **1.024
+updates** cada, em uma única RTX 4090 remota, conforme autorização atual.
+
+Todos partiram dos mesmos pesos não quantizadores do compacto fold1. O controle
+compact2048 preservou o codebook; K32/K64 foram inicializados por farthest-first
++ 12 passos Lloyd sobre vetores do encoder, somente de arquivos de treino de
+ajuste (até 256 vetores/recorte). A grade densa adiciona redução temporal menor
+à geometria spatial-4x; muda contexto/padding e compute, não só contagem.
+
+Mesma seed 2090, sequência de recortes, AdamW novo LR 1e-4, wd 1e-5, batch1,
+clip1, FP32/TF32 desligado, objetivo 0,5 MSE + 0,5 L1 + VQ. A seleção usou
+arquivos internos de treino excluídos do novo ajuste/calibração, nos passos
+0/256/512/1024. Todos selecionaram 1024. A origem já viu esses arquivos em
+pré-treinamento: **não são holdout independente**. O seletor de distorção usa a
+média histórica por tile/configuração/família; a avaliação física pondera células
+nos grupos. Não confundir essas agregações nem ganho interno com generalização.
+
+A avaliação pareada compreendeu os mesmos **63 recortes de desenvolvimento**,
+quatro famílias/seis configurações e **4.059.000 células**. Não se declarou
+validação virgem; nenhum sinal test, EDAS ou SMF foi usado nesta triagem.
+Artefatos: `results/experiments/alphabet_factorization_fold1_20261104/`.
+
+### 10.2 Resultado de fidelidade e bytes
+
+| Braço | Posições totais | Bits nominais/símbolo | RMSE macro | Variação RMSE vs controle | Frames reais | Stream com tabelas/descriptor/mapas |
+|---|---:|---:|---:|---:|---:|---:|
+| Compacto K2048 | 73.332 | 11 | 0,649693 | — | 96.688 | 131.481 |
+| Compacto K64 | 73.332 | 6 | 0,734676 | +13,080% | 49.968 | 68.885 |
+| Denso K64 | 145.500 | 6 | 0,685714 | +5,544% | 96.604 | 115.537 |
+| Denso K32 | 145.500 | 5 | 0,718390 | +10,574% | 78.676 | 97.353 |
+
+O contraste de payload mais próximo foi **denso K64 versus compacto K2048**:
+apenas 84 bytes a menos nos frames (−0,087%), porém RMSE **5,544% pior**.
+A economia de stream chegou a 12,126% porque o alfabeto reduzido também diminui
+as tabelas transmitidas; **não é taxa total exatamente igual**. O compacto K64
+economizou 48,320% dos frames e o denso K32 18,629%, mas ambos perderam fidelidade.
+Esses são pontos de trade-off, não manutenção/melhora simultânea dos dois eixos.
+
+FAK1 é experimental: transmite índices com bit-packing ou range marginal com
+fallback, shape/side e fingerprints/CRCs; contagens são ajustadas somente no
+treino após selecionar os pesos. Todos usam o mesmo coder/contrato. A contagem
+de símbolos e os bytes **medidos** são separados; a grade densa não tem exatamente
+2× posições devido ao padding. Não extrapolar os bytes desta seleção de 63
+recortes para arquivos contínuos nem misturar com taxas dos estudos anteriores.
+
+Houve regressão de RMSE nas **seis configurações** de todos os braços reduzidos:
+2,35–14,85% no denso K64, 9,12–17,90% no compacto K64 e 5,53–21,78% no denso K32.
+No denso K64 o p90 melhorou em duas configurações, mas piorou nas outras quatro;
+a correlação macro caiu de 0,749290 para 0,716486 e a razão RMS de 0,776029 para
+0,736291. Logo, o resultado negativo não é apenas um efeito da média macro.
+
+Nenhum dos 63 frames candidatos de cada braço reduzido passou conjuntamente
+bytes e guardas físicas contra o **controle também treinado**. O fallback
+preservou fidelidade, mas não trouxe ganho: os streams roteados custaram
+132.812/132.828/132.572 bytes, contra 131.544 do controle com o mesmo byte de rota.
+Os dois registries/tabelas são cobrados no fallback, não tratados como gratuitos.
+Pesos em tensores: 111.832.324 bytes no controle e ~110,8 MB em cada reduzido;
+o fallback exige os dois modelos. Nenhum candidato foi promovido.
+
+### 10.3 Aprendizagem, custo e limites do negativo
+
+| Braço | Distorção interna passo 0 | Passo 512 | Passo 1024 | Compute de treino sincronizado |
+|---|---:|---:|---:|---:|
+| Compacto K2048 | 0,409752 | 0,413982 | 0,409006 | 53,52 s |
+| Compacto K64 | 0,526208 | 0,505754 | 0,503854 | 53,25 s |
+| Denso K64 | 0,602728 | 0,453165 | 0,444957 | 58,16 s |
+| Denso K32 | 0,623346 | 0,490023 | 0,479929 | 58,09 s |
+
+Tempo de treino + checks foi ~58–63 s por braço; pico alocado ~2,78–3,07 GB.
+O smoke separado executou oito updates adicionais. Nenhum benchmark pareado da
+4060 foi feito, portanto esses tempos **não medem diretamente** aceleração entre
+GPUs. Todos os 64/32 códigos apareceram na calibração dos alfabetos pequenos;
+o controle usou 1.227 códigos dos 2.048 disponíveis.
+
+O denso K64 ainda melhorava no check interno entre 512 e 1024. Isso impede
+concluir que grade/cardinalidade sejam estruturalmente inviáveis ou que os
+modelos tenham convergido. Também houve inicialização/legado de pré-treinamento
+distintos para o quantizador, embora os pesos não quantizadores fossem iguais.
+O resultado demonstrado é mais restrito: **a adaptação curta prescrita não
+produziu candidato com fidelidade e bytes admissíveis**. Não atingiu o critério
+pré-definido de ≥5% de ganho guardado para ampliar treino; não estender por
+melhora retrospectiva de uma curva nem relaxar as guardas para salvar o braço.
+
+### 10.4 Controle clássico no orçamento real de cada ponto
+
+Para contextualizar os pontos baratos, o DCT esparso existente foi codificado
+em CPU nos mesmos 63 alvos, com **teto por frame igual aos bytes FAK1 medidos**,
+incluindo índices dos coeficientes, escala, side e framing. Precisão fixada em
+oito bits, sem sweep. O método recebeu exatamente o mesmo packet robusto/máscara;
+escapes são restaurados bit a bit. `compress_packet` preserva o comportamento
+legado de `compress(raw, ...)` e evita renormalizar/proteger outro alvo.
+
+| Orçamento do braço | RMSE neural | RMSE DCT | Frames neurais | Frames DCT |
+|---|---:|---:|---:|---:|
+| Compacto K2048 | 0,649693 | 0,825867 | 96.688 | 96.632 |
+| Compacto K64 | 0,734676 | 0,855765 | 49.968 | 49.908 |
+| Denso K64 | 0,685714 | 0,825884 | 96.604 | 96.540 |
+| Denso K32 | 0,718390 | 0,836461 | 78.676 | 78.618 |
+
+O controle clássico não resolveu a fidelidade média nesses tetos. Houve algumas
+vitórias locais concorrentes do DCT (0/1/2/3 janelas, respectivamente), portanto
+não há dominância universal da rede. O DCT usa ligeiramente menos bytes e nenhum
+peso/tabela aprendido; a tabela compara frames, **não igualdade exata de custo
+total de implantação**. Não é codec clássico otimizado nem limite inferior.
+Artefatos: `alphabet_matched_dct_fold1_20261104/`; zero novos updates.
+
+A auditoria remota da triagem verificou **1.186 hashes de snapshots/inputs**,
+**252 frames**, **252 decisões de rota**, separação por arquivo no check e
+**4.096 updates**, sem modificar a origem. O decoder independente restaurou
+FAK1 K64 em CPU, sem ler o waveform original. Pesos selecionados/optimizer
+permanecem no remoto; resultados, protocolos, snapshots e frames também estão
+espelhados localmente. O diagnóstico congelado de quantização é registrado à
+parte; sua saída contínua não é um codec nem pode ser contabilizada como ganho.
+
+### 10.5 Diagnóstico congelado: quantização versus adaptação
+
+Nos mesmos pesos selecionados, comparar o decoder alimentado pelos vetores
+hard transmitidos com o decoder alimentado pelo encoder **sem quantização**:
+
+| Braço | RMSE hard de desenvolvimento | RMSE contínuo diagnóstico | Distorção interna hard → contínua |
+|---|---:|---:|---:|
+| Compacto K2048 | 0,649693 | 0,625252 | 0,409006 → 0,383225 |
+| Compacto K64 | 0,734676 | 0,647649 | 0,503854 → 0,406684 |
+| Denso K64 | 0,685714 | 0,649151 | 0,444957 → 0,408613 |
+| Denso K32 | 0,718390 | 0,697537 | 0,479929 → 0,464762 |
+
+A distorção interna é a mesma mistura normalizada MSE/L1 do seletor de treino,
+não RMSE físico. Há tiles constantes no check: suas razões RMSE relativas podem
+explodir por denominador quase zero. Não usar essas razões para interpretar
+aprendizagem ou escolher um braço. O diagnóstico v2 acrescenta a distorção
+normalizada apropriada, preservando o v1 e sem alterar pesos/seleção. Os replays
+hard dos 63 recortes reproduziram exatamente as métricas da triagem original.
+
+O compacto K64 tem penalidade de quantização maior; no denso K32, até a saída
+contínua continua pior. Assim, **não há evidência de um gargalo exclusivo e
+uniforme de codebook**: adaptação/contexto/representação também importam.
+O contínuo do denso K64 quase empata com o controle hard, mas continua pior que
+o contínuo do próprio controle. Isso não demonstra vantagem de grade densa nem
+justifica transmitir vetores sem cobrar seus bits. A entrada contínua pode estar
+fora da distribuição vista pelo decoder; não é ótimo teórico, intervenção causal
+completa ou codec de taxa equivalente.
+
+Artefatos: `alphabet_frozen_gap_v2_fold1_20261104/` e versão inicial preservada
+`alphabet_frozen_gap_fold1_20261104/`. Zero updates adicionais; inferência congelada
+na mesma RTX 4090. **Decisão:** encerrar a triagem sem promoção ou extensão longa.
+O DCT e o diagnóstico contínuo foram etapas adicionais para interpretar o negativo,
+não formas de trocar o alvo, métrica ou orçamento até declarar sucesso.
+
+**Próximos passos por evidência:** manter os checkpoints-controle e os pontos de
+trade-off como referências. Antes de nova campanha, uma proposta de quantizador
+estruturado ou de inicialização/convergência deve mostrar no treino como reduz
+a penalidade de quantização **sem piorar a representação contínua**, com teto
+de bytes real, exposição e controle comparáveis. Não repetir K32/densidade ou
+mais updates sem esse mecanismo. Cobertura/requisitos físicos e confirmação
+independente continuam necessários para promoção; nenhum destes resultados
+autoriza sacrificar fidelidade para anunciar maior razão de compressão.
+
+Fechamento: **317 testes passaram** na cópia local, incluindo bitstreams de
+alfabetos variáveis, inicialização determinística em CPU e compatibilidade
+legada/proteção robusta do DCT. Além da auditoria da triagem, foram verificados
+os dez hashes de snapshots dos controles/diagnósticos e decodificados/reavaliados
+os **252 frames DCT** contra os scores arquivados. Há 4.096 updates de produção
++ oito de smoke nesta série; os diagnósticos seguintes não atualizaram pesos.
+Não há continuação de treinamento agendada por estes resultados.
+
+## 11. Quantização por subespaços com rede congelada
+
+### 11.1 Testes de treino: subespaços diretos e rotação PCA
+
+O diagnóstico anterior mostrou penalidade discreta relevante. A etapa seguinte
+isolou o quantizador: **o mesmo encoder/decoder do compacto K2048 selecionado**
+ficou congelado; cada vetor de 128 coordenadas foi representado por dois códigos
+de 64 coordenadas. K32/K64 por subespaço exigem nominalmente 10/12 bits por
+posição, contra 11 do original. A capacidade combinatória não é informacionalmente
+gratuita: todos os índices, codebooks e parâmetros compartilhados são cobrados.
+
+Os centroides foram ajustados somente nos **113 recortes de treino de ajuste**,
+com 12 iterações Lloyd; tabelas marginais também foram ajustadas nesses arquivos.
+Os **22 recortes de arquivos de treino separados** foram usados como check,
+sem novos sinais de validação. A origem já viu esses arquivos historicamente;
+isso não é confirmação independente. Não acessar EDAS/SMF/test.
+
+| Quantizador | Distorção normalizada macro no check | Frames reais | Stream candidato sem pesos compartilhados |
+|---|---:|---:|---:|
+| VQ original K2048 | 0,409006 | 61.527 | 84.894 |
+| Produto 2×32, coordenadas originais | 0,512000 | 53.492 | 60.795 |
+| Produto 2×64, coordenadas originais | 0,482519 | 64.308 | 71.867 |
+| Produto 2×32, PCA balanceada | 0,448460 | 53.748 | 61.281 |
+| Produto 2×64, PCA balanceada | 0,422618 | 66.456 | 74.245 |
+
+A referência acima é **sem** os 22 bytes de rota; com rota seu stream tem
+84.916 bytes. Os candidatos foram decodificados dos índices hard transmitidos,
+sem usar latentes contínuos no receptor. FAK1 usa uma grade de símbolos de
+largura duas vezes a grade latente, com grupos intercalados e descriptor próprio;
+o reader precisa interpretar essa semântica, não inferi-la das formas dos pesos.
+
+A rotação não foi escolhida por reconstrução. O diagnóstico nos **28.860 vetores
+amostrados do treino de ajuste** encontrou 99,9850% da variância em oito
+componentes, rank efetivo 5,32 e massa quadrática de covariância entre metades
+de 0,4895. Isso satisfez o critério exploratório pré-fixado para um único controle
+PCA balanceado (massa cruzada ≥0,10 ou variância top32 ≥0,80). Os eixos principais
+foram distribuídos alternadamente entre subespaços; sem whitening, OPQ, ajuste de
+rotação pela perda de waveform ou varredura de limites.
+
+A PCA reduziu o erro latente relativo do 2×64 de **0,389118 para 0,156037**,
+abaixo de **0,183450** do VQ original nos mesmos checks. Mesmo assim, sua
+distorção de reconstrução permaneceu **3,328% pior**, com mais bytes de frames.
+Logo, **menor distância latente não garante menor erro do sinal restaurado**.
+Isso é um resultado diagnóstico, não um codec bem-sucedido nem prova de que o
+erro latente seja irrelevante em toda representação.
+
+Nenhuma das 22 janelas de qualquer candidato passou conjuntamente o teto de bytes,
+as guardas físicas inalteradas e a redução de distorção. O fallback manteve os
+resultados originais, sem ganho, e acrescentou custos de registro/tabela. O
+critério de avanço (≥1% de ganho guardado no check e stream não maior) não foi
+atingido; **nenhuma validação de sinais foi aberta para esses candidatos**.
+
+Custos compartilhados adicionais: 16.384/32.768 bytes em centroides para K32/K64;
+no PCA, mais **66.048 bytes** em matriz e centro float32, além dos cabeçalhos
+dos arquivos. Eles não estão escondidos na coluna de stream e não são gratuitos:
+o modelo original é retido para fallback, e a amortização depende da quantidade
+de dados. Nenhuma economia de tabelas autoriza ignorar o custo do quantizador.
+
+Artefatos: `product_vq_train_probe_20261104/` e
+`product_vq_pca_train_probe_20261104/`, em `results/experiments/`. Encoder, decoder
+e codebook original não foram atualizados. A auditoria inicial verificou 143
+hashes, 66 frames e separação por arquivo; o reader CPU reconstruiu um frame
+produto sem ler o waveform original. O diagnóstico de covariância não é uma
+medida de fidelidade ou redundância já acessível ao decoder.
+
+**Implicação:** justificar um contraste curto entre centroides ajustados por
+distância latente e por perda de reconstrução através do decoder congelado,
+mantendo PCA e orçamento fixos. Não justificar mais densidade, remoção de canais
+ou extensão longa dos braços anteriores. O resultado dessa intervenção é
+registrado separadamente; o probe PCA negativo não é reclassificado como ganho.
+
+### 11.2 Ajuste pareado dos centroides pela perda do sinal
+
+Foi executado o contraste seguinte na RTX 4090, **256 updates por braço**:
+mesmos codebooks PCA 2×32 iniciais, mesma sequência seed 2092 e Adam novo
+LR 1e-3, sem weight decay, clip1, FP32 e batch1. Somente os **4.096 valores de
+centroides** foram treináveis. Encoder, decoder, codebook original, matriz PCA
+e centro permaneceram congelados. As atribuições nearest hard foram recalculadas
+a cada passo; o receptor continua recebendo apenas índices e assets compartilhados.
+
+- **Controle latente:** minimiza MSE entre vetor quantizado e vetor do encoder.
+- **Waveform:** minimiza a mistura normalizada 0,5 MSE + 0,5 L1 através do decoder
+  congelado; não adiciona side afim, código residual ou pesos novos no decoder.
+- Mesmos 113 recortes de ajuste e 22 checks, separados por arquivo;
+  nenhuma leitura de sinais de validação. Escolher menor distorção de reconstrução
+  no check nos passos 0/64/128/256, com passo zero elegível nos dois braços.
+- Tabelas reestimadas apenas nos arquivos de ajuste após a seleção. Mesmos
+  critérios de bytes/guardas físicas dos probes anteriores, sem relaxamento.
+
+| Braço | D inicial | D no passo 64 | D no passo 128 | D selecionada, passo 256 | Frames candidatos |
+|---|---:|---:|---:|---:|---:|
+| Controle latente | 0,448460 | 0,448389 | 0,448450 | 0,448192 | 53.828 |
+| Waveform | 0,448460 | 0,448274 | 0,448216 | 0,448172 | 53.660 |
+
+O ganho de waveform sobre o controle pareado foi somente **0,00448% de D**;
+contra a inicialização PCA, **0,06405%**. Não são percentuais de RMSE físico
+ou de validação. O candidato waveform continuou **9,576% pior** em D que o VQ
+original (0,409006) nos mesmos checks. Sua economia de frames não compensa essa
+perda quando o objetivo exige manter/aumentar fidelidade.
+
+O controle latente teve MSE latente relativo 0,231995; waveform, 0,235818.
+O pequeno ganho de reconstrução veio apesar do erro latente um pouco maior,
+coerente com o diagnóstico de que os objetivos não são equivalentes. A magnitude,
+porém, ficou muito abaixo do critério pré-fixado de avanço, não justificando
+prolongar esse ajuste curto ou varrer LR/iterações.
+
+**Zero admissões em 22 janelas por braço.** O fallback conservou a reconstrução
+original e custou 86.226 bytes de stream em cada braço, contra 84.916 do controle
+original roteado. Os streams candidatos sem fallback custaram 61.361/61.193 bytes,
+mas não mantiveram a fidelidade. Custos compartilhados adicionais continuam
+**16.384 bytes** de centroides + **66.048 bytes** de transformação, mais cabeçalhos
+dos arquivos, além do modelo original retido. Não ocultar esses assets em uma
+razão de compressão obtida apenas dos frames.
+
+Tempo de treino/checks foi ~3,74 s no controle e ~6,84 s no waveform, com pico
+alocado ~0,54/2,24 GB. O controle latente não retropropaga pelo decoder e custa
+menos compute; dose de recortes/updates, não tempo, foi pareada. A etapa de
+codificação/verificação é separada. Houve quatro updates adicionais de smoke.
+O orçamento curto não caracteriza ótimo ou convergência do quantizador.
+
+A auditoria confirmou **512 updates somente de centroides**, hash do estado
+completo da rede original inalterado, hashes de PCA/centro preservados, seleção
+train-only, optimizer/RNG arquivados e **66 frames** fonte/candidatos com rotas
+e replay dos símbolos corretos. Foram verificados 287 hashes de snapshots/inputs
+na cadeia treino + avaliação; o smoke foi auditado separadamente. O reader CPU
+restaurou um frame **512×1.000** do candidato waveform, com rotação e codebooks
+transmitidos, sem ler o waveform original. Não se exige igualdade bit a bit das
+predições ordinárias entre CPU/GPU; os índices e escapes são exatos.
+
+Artefatos: `decoder_aware_pq_train_20261104/`, sua subpasta `evaluation/` e o smoke
+`decoder_aware_pq_smoke_20261104/`, em `results/experiments/`. Nenhuma confirmação
+de desenvolvimento foi aberta porque o critério de avanço falhou.
+
+**Decisão:** encerrar estes braços sem promoção ou extensão automática. A PCA
+explicou parte da falha dos subespaços diretos, mas não a resolveu sob fidelidade
+e bytes concorrentes; o ajuste decoder-aware pequeno também não resolveu.
+Não concluir impossibilidade da quantização por produto nem que o DAS bruto
+tenha rank 5,32: esse rank é apenas da distribuição de vetores latentes amostrada.
+Uma próxima proposta precisa apresentar mecanismo distinto e controle a taxa
+pareada, não reciclar os negativos com mais updates, mais bits ou métrica trocada.
+
+Fechamento desta continuidade: **322 testes locais passaram**, incluindo gradientes
+restritos aos centroides e replay da rotação ortogonal. Protocolos, curvas,
+checkpoint retomável dos centroides, seleção, frames e auditorias estão preservados.
+O orçamento foi 512 updates de centroides + quatro de smoke; zero novos updates
+de encoder/decoder e zero novos sinais de validação. Não há job ou extensão
+de treinamento deixados em execução por estes resultados.
+
+## 12. Controle preditivo com erro limitado e taxa medida
+
+### 12.1 Mecanismo e escopo
+
+Após os negativos do quantizador, foi testado um controle **sem rede e sem pesos
+aprendidos**, diferente do DCT: quantização escalar uniforme do alvo protegido,
+diferenças inteiras temporais ou espaço-temporais de Lorenzo, planos de bytes
+e zlib nível 6. O formato experimental **FPI1** transmite shape, passo, preditor,
+side de normalização/escapes, payload e CRC. O decoder não precisa do original,
+de latentes contínuos ou de dados vizinhos não transmitidos.
+
+Os três preditores (identidade/temporal/Lorenzo 2D) produzem **a mesma grade
+quantizada**; escolher o menor frame não seleciona pela fidelidade. A inversão
+por somas cumulativas é inteira, com limites de overflow e descompressão; os
+escapes mantêm bits exatos. Nenhuma faixa/canal foi retirada para melhorar taxa.
+
+Foram usados os mesmos **22 recortes de treino**, **2.909.000 células**, da etapa
+anterior. As métricas hard e os frames do VQ original foram reutilizados com
+checagem de shape/side/identidade. Nenhum novo sinal de validação, EDAS, SMF ou
+test foi lido. Toda esta etapa foi CPU, **zero updates**; não precisou de GPU.
+
+### 12.2 Comparação no orçamento dos frames VQ
+
+O encoder enumerou passos fixos de precisão (epsilon de 2^4 a 2^-16) e escolheu
+o menor epsilon cujo **frame medido** coubesse no teto da janela VQ. A escolha
+não usa RMSE nem assume monotonicidade dos bytes. A primeira grade deixou 38,0%
+do orçamento sem uso; por isso foi preservada e acrescida de um controle de
+taxa refinado, com **24 propostas de bisseção geométrica por bracket elegível**,
+usando somente bytes e retendo a menor precisão observada que coubesse. É uma
+heurística de controle de taxa, não prova de ótimo global.
+
+| Método | Frames candidatos | Distorção normalizada macro | RMSE macro, apenas alvos variáveis |
+|---|---:|---:|---:|
+| VQ de referência | 61.527 | 0,409006 | 0,665741 |
+| Preditivo, grade inicial | 38.138 | 0,699117 | 0,898627 |
+| Preditivo, controle refinado | 61.273 | 0,656434 | 0,866100 |
+
+O refinamento utilizou **99,587%** do orçamento agregado dos frames, respeitando
+também cada teto individual. Ainda assim, **zero das 22 janelas** passou as
+guardas físicas concorrentes mais redução de distorção. O resultado negativo
+não depende apenas do subaproveitamento grosseiro de taxa da primeira grade.
+O fallback preservou o VQ, mas aumentou o stream de **84.916 para 85.211 bytes**
+pelo descriptor adicional; não houve avanço de fidelidade/compressão.
+
+O RMSE relativo tem denominador quase zero em um recorte constante. Por isso
+essa coluna é um **diagnóstico nos 21 alvos variáveis**, selecionados somente
+pela variância do alvo normalizado, igual nos dois métodos. A distorção macro,
+taxas e guardas continuam usando **todos os 22 recortes**; nenhum alvo foi
+excluído da codificação nem da decisão. Não comparar a macro relativa patológica
+dos recortes constantes como se fosse ganho de fidelidade do novo codec.
+
+### 12.3 Pontos de precisão maior: referência de taxa, não vitória a bytes iguais
+
+Também foram codificados três epsilon fixos, prospectivamente definidos. O erro
+limitado é absoluto nas **coordenadas normalizadas float32 protegidas**, com a
+margem de arredondamento numérico medida. Não são tolerâncias físicas fornecidas
+pelo usuário, nem critérios operacionais inventados. A normalização/escapes é
+a mesma do VQ; as amostras escapadas são exatas e seus bytes são cobrados.
+
+| Epsilon normalizado | RMSE nos 21 alvos variáveis | Correlação macro | Stream | Bits/célula | Razão sobre float32 |
+|---|---:|---:|---:|---:|---:|
+| 0,1 | 0,057758 | 0,998336 | 2.580.666 bytes | 7,097 | 4,509× |
+| 0,01 | 0,005776 | 0,999983 | 3.758.979 bytes | 10,338 | 3,096× |
+| 0,001 | 0,000578 | 0,99999983 | 4.682.289 bytes | 12,877 | 2,485× |
+
+A fase FFT macro nesse mesmo subconjunto foi 0,999165/0,999992/0,99999992.
+As taxas contam os **22 recortes completos**, side, framing, descriptor e mapas,
+sem pesos/tabelas aprendidos. A fidelidade é maior, mas a taxa também é muito
+maior que a do VQ: **não atende ao objetivo de melhorar fidelidade mantendo a
+compressão**. Esses pontos são referências empíricas de alta precisão, não
+limites inferiores, prova de incompressibilidade do DAS ou aceitação operacional.
+
+Os máximos normalizados observados foram 0,100000024, 0,009999994 e 0,001000047;
+os pequenos excessos sobre epsilon correspondem à margem float32 explicitamente
+verificada. Não anunciar uma garantia física estrita ignorando essa margem e
+o roundtrip de normalização. O preditor identidade venceu em 15–17 das 22
+janelas, dependendo da precisão; isso caracteriza este coder/alvo, não prova
+ausência de redundância espacial/temporal no sinal.
+
+O VQ exige **111.832.324 bytes de tensores compartilhados**, retidos pelo híbrido;
+o preditivo puro não exige pesos aprendidos. Custos de implantação/amortização
+devem ser discriminados: as colunas de taxa não fingem incluir o modelo VQ nem
+transformam este pequeno conjunto de recortes em uma campanha de implantação.
+
+### 12.4 Auditoria e decisão
+
+O controle refinado teve **966 propostas de taxa re-encodificadas**, **88 frames
+FPI1 decodificados/reavaliados**, **44 decisões de rota** e **28 hashes de
+snapshots/inputs** conferidos. Os erros, escapes e guardas foram verificados;
+o reader CPU independente restaurou um quadro **512×1.000** sem waveform
+original ou assets aprendidos. A suíte local passou em **327 testes**, incluindo
+os três preditores com replay idêntico, não finitos bit-exatos, corrupção,
+descompressão limitada, shapes pequenos e rejeição de side afim incompatível.
+
+Artefatos em `results/experiments/`: `predictive_codec_train_probe_20261104/` e
+`predictive_codec_refined_train_probe_20261104/`. Os resultados iniciais não
+foram sobrescritos. Nenhuma confirmação de validação foi aberta, pois o critério
+de avanço falhou.
+
+**Decisão:** manter FPI1 como controle experimental de taxa/precisão, sem promoção
+e sem substituir o pipeline padrão. Não ampliar treino neural ou buscar novas
+tolerâncias para reinterpretar esse negativo. O resultado reforça a distinção
+entre compressão agressiva com distorção alta e alta precisão com taxa maior.
+Uma próxima representação precisa demonstrar mecanismo novo de redução de bits
+para a informação residual, com bytes, cobertura e fidelidade concorrentes;
+esses controles não justificam repetir centroides, largura ou apenas mais passos.
+
+## 13. Fatores espaciais/temporais transmitidos a taxa limitada
+
+### 13.1 Hipótese, codec e orçamento
+
+Foi testada uma representação que torna a estrutura espacial **explicitamente
+disponível ao receptor**: SVD da matriz protegida, com os fatores espaciais e
+temporais efetivamente codificados. Isso difere de diagnosticar correlação no
+residual original e supor que o decoder neural possa usá-la sem novos bits.
+
+O formato experimental **FLR1** transmite shape, posto, ganho, normalização e
+escapes, escalas float32 por componente, fatores signed8 e CRC. Os valores
+singulares são incorporados aos fatores temporais. A serialização escolhe entre
+bytes diretos ou diferenças modulares por linha + zlib6; a reconstrução dos
+fatores é a mesma. Não há modelo/tabela aprendido ou vetor contínuo gratuito.
+
+Nos mesmos **22 recortes de treino**, **2.909.000 células**, foram enumerados
+postos 0…min(64,H,W), usando os tetos reais por janela do VQ. O controle inicial
+escolhe o maior posto que cabe em bytes, sem selecionar pela qualidade. São
+avaliadas duas propostas fixas: fatores crus e restauração de RMS unitário;
+o ganho desta última ocupa um float64 explicitamente pago no frame. A fonte
+continua fallback; nenhuma guarda foi relaxada.
+
+A SVD é cálculo do encoder por janela, não treino de pesos compartilhados.
+Toda a etapa foi CPU, sem novos updates ou sinais de validação/EDAS/SMF/test.
+SVD ideal de fatores não quantizados é apenas diagnóstico; não é resultado de
+compressão, ótimo com a máscara ordinária ou limite informacional do DAS.
+
+### 13.2 Resultado inicial e busca de posto com guardas
+
+| Política | Distorção normalizada macro | Bytes de stream híbrido | Trocas admitidas |
+|---|---:|---:|---:|
+| VQ de referência | 0,409006 | 84.916 | — |
+| FLR1 guardado, maior posto viável | 0,408296 | 84.401 | 1/22 |
+| FLR1 guardado, escolha entre todos os postos viáveis | 0,408296 | 84.401 | 1/22 |
+
+O ganho guardado foi **0,17376% de distorção**, não de RMSE de validação; o stream
+caiu 515 bytes (0,606%). Ficou abaixo do critério prospectivo de **≥1%** de ganho
+guardado a stream não maior, portanto não abriu confirmação de desenvolvimento.
+Não houve treinamento adicional para tentar salvar esse ponto.
+
+A troca admitida ocorreu em **um recorte de single-mode, Configuration 8**, com
+posto 8 e fatores crus. O RMSE relativo passou de **0,259217 para 0,145976**,
+com **9.308 → 8.518 bytes** no frame. Correlação 0,965837 → 0,989288;
+p90 por canal 0,493756 → 0,464401; razão RMS 0,962839 → 0,989655;
+magnitude FFT 0,183549 → 0,118230 e fase 0,981982 → 0,996211.
+É um benefício local efetivo, mas não demonstra generalização ou ganho macro
+suficiente. O quadro 512×1.000 foi decodificado pelo reader independente em CPU,
+sem waveform original ou pesos aprendidos.
+
+Sem fallback, os frames do maior posto viável somaram **50.087 bytes**, contra
+61.527 do VQ, mas a distorção macro piorou para **0,620768**. No diagnóstico dos
+21 alvos variáveis, o RMSE macro foi **0,769111**, contra **0,665741** da fonte.
+Esse subconjunto só evita o denominador relativo patológico do tile constante:
+os 22 recortes continuam incluídos em bytes, guardas e distorção principal.
+Não promover a economia bruta sacrificando fidelidade.
+
+Um recorte multimode já melhorava erro global/espectro com o maior posto, mas
+regredia o p90 por canal. Isso motivou um **seletor aninhado** entre os postos
+viáveis, preservando a proposta inicial, a precisão dos fatores, as duas opções
+de ganho e todas as guardas. O encoder pode escolher a menor distorção admissível
+porque o posto/ganho são transmitidos; não foi ajuste de modelo na validação.
+Mesmo após essa busca, nenhuma troca adicional foi admitida. O negativo não
+decorre apenas de usar o maior posto em vez do melhor posto admissível.
+
+### 13.3 Diagnóstico da codificação dos fatores temporais
+
+Antes de implementar outra variante, foi verificada a energia retida por **16
+coeficientes DCT por fator temporal**, em uma decomposição diagnóstica de posto
+até 8. A regra pré-fixada permitia um único codec espectral de fatores somente
+se pelo menos duas configurações de treino retivessem ≥80% dessa energia.
+
+As médias por configuração ficaram em **14,96–69,52%**: nenhuma atingiu o corte.
+Assim, **a variante espectral não foi implementada ou treinada**. Essa energia
+contínua não seria um resultado codificado; índices, escalas, quantização e bytes
+teriam de ser cobrados em um teste posterior. O diagnóstico não prova ruído
+independente nem impossibilidade de outras representações de fatores.
+
+### 13.4 Auditoria, custos e decisão
+
+Foram re-encodificadas **1.087 propostas de posto por variante**. A auditoria do
+controle inicial verificou 60 frames, 38 propostas de restauração e 44 rotas;
+a busca aninhada verificou 142 frames, 120 propostas e 44 rotas. Cada variante
+teve 28 hashes de snapshots/inputs conferidos. Essas contagens incluem replays
+e janelas relacionadas, **não amostras independentes**.
+
+O híbrido retém os **111.832.324 bytes de tensores VQ compartilhados**, separados
+das taxas de stream. Os fatores FLR1 não têm custo de pesos aprendidos, mas
+precisam ser pagos integralmente em cada frame. Nenhum modelo ou código de
+baixo posto é gratuito no cálculo de implantação.
+
+Artefatos em `results/experiments/`: `lowrank_factors_train_probe_20261104/`, seu
+`temporal_factor_diagnostic.json` e `lowrank_guarded_rank_search_train_20261104/`.
+A suíte completa passou em **331 testes**, incluindo fatores quantizados,
+escapes NaN/extremos bit-exatos, ganho transmitido, posto zero, corrupção,
+descompressão limitada e rejeição de side afim incompatível.
+
+**Decisão:** preservar FLR1 como controle experimental e seu ganho local, sem
+promoção ou extensão automática. A representação não manteve a fidelidade na
+maior parte dos recortes; seleção de postos e ganho não resolveram isso. Não
+abrir validação ou sacrificar canais fracos para transformar o ganho local em
+alegação generalista. A próxima hipótese precisa explicar como codifica melhor
+a informação restante, e não apenas aumentar posto, bits ou orçamento de busca.

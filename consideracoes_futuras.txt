@@ -1,2 +1,2 @@
-- roi (region of interest)
-- pinn neural networrk
+- LR variavel (diminui ao longo das epocas)
+- usar outro dataset para treinamento inicial (outro artigo DAS de pref FEBUS, talvez dataset quantx) + fine tuning drive

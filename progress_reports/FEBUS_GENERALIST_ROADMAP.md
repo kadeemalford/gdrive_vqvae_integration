@@ -83,7 +83,11 @@ do [relatório 77](77-RESEARCH_DIRECTION_REVIEW.md):
    O particionamento congelado e o E1 denso também não resolveram a fidelidade
    a orçamento pareado. Granularidade dos latentes versus cardinalidade/bits por
    símbolo é uma hipótese estrutural distinta, não testada por apenas aumentar
-   tokens ou largura; requer protocolo/controles próprios antes de execução.
+   tokens ou largura. A triagem curta posterior de grade × cardinalidade
+   (seção 10 do relatório 79) foi concluída: denso K64 entregou frames quase
+   iguais ao compacto K2048, mas RMSE 5,54% pior; K32/K64 mais baratos também
+   perderam fidelidade. Nenhum passou as guardas. As curvas ainda melhoravam:
+   não confundir o negativo curto com convergência ou refutação estrutural.
    Contexto temporal longo segue condicional; o AR não sustentou lags extras.
 
 Ampliação isolada de largura, novos refiners/seletores ROI e ajustes de empacotamento
@@ -858,9 +862,45 @@ não produto que entrega todas as linhas. O FPB1 que codifica todas as regiões
 e NaNs não admitiu candidatos: no denso, 5,39% menos RMSE veio com 5,15% mais
 bytes de bundles e RMS pior. Não usar esse ponto como avanço a orçamento igual.
 Os formatos exatos para não finitos resolveram integridade/overhead, não a
-fidelidade neural ordinária. A próxima proposta estrutural deve controlar a
-fatoração número de índices × bits por símbolo, inicialização e bytes reais,
-ou apresentar outro mecanismo novo; não repetir os ramos encerrados.
+fidelidade neural ordinária. A triagem posterior de fatoração grade × alfabeto
+também não gerou avanço admissível em 1.024 updates por braço: quatro braços,
+4.096 updates numa RTX 4090, seis configurações com regressão nos candidatos
+reduzidos. O DCT a teto real de cada ponto foi pior em RMSE macro. Outra proposta
+precisa separar erro de quantização de adaptação/contexto e controlar
+inicialização/convergência/bytes, sem apenas repetir a continuação curta.
+O diagnóstico congelado reforçou essa separação: retirar VQ do compacto K64
+recupera boa parte do erro, mas o denso K32 continua pior mesmo em contínuo.
+Qualquer novo quantizador/inicialização precisa reduzir a penalidade discreta
+sem piorar a representação contínua no treino, antes de outra campanha ampla.
+Contínuo não é codec nem prova de limite; ver seção 10 do relatório 79.
+
+**Quantizador estruturado, probe de treino concluído (seção 11 do relatório 79):**
+quantização por produto com dois subespaços K32/K64 não preservou fidelidade.
+A rotação PCA train-only reduziu o erro latente do K64 abaixo do original, mas
+não a distorção do sinal. Um par de 256 updates de centroides congelando toda a
+rede confirmou a diferença entre objetivos, porém waveform ganhou só 0,00448%
+de distorção sobre o controle latente. Zero admissões nas 22 janelas por braço;
+nenhuma validação aberta, nenhum modelo promovido. Encerrar estes contrastes
+curtos sem extensão automática; outra proposta precisa de mecanismo distinto
+e controle explícito de bytes/representação, não apenas mais passos ou bits.
+
+**Controle preditivo de precisão/taxa concluído (seção 12 do relatório 79):**
+FPI1 (quantização uniforme + diferenças inteiras/planos de bytes) não superou o
+VQ nas 22 janelas de treino, mesmo usando 99,6% do orçamento de frames após
+refinamento por bytes. Zero admissões pelas guardas. Os pontos de maior precisão
+atingiram razões de 2,49–4,51×, com taxa muito maior que a neural; são controles
+sem pesos aprendidos, não limites inferiores ou tolerâncias operacionais.
+Preservar essa referência e a separação entre precisão e taxa, sem promovê-la
+ou abrir validação para salvar um candidato que falhou no probe.
+
+**Fatores transmitidos, probe concluído (seção 13 do relatório 79):** FLR1 codifica
+fatores espaciais/temporais quantizados, em vez de presumir que o decoder tenha
+acesso à correlação do residual. Admitiu uma troca local: RMSE 0,259 → 0,146 a
+menos bytes. O ganho agregado guardado, porém, foi só **0,174% de distorção**;
+buscar entre todos os postos viáveis não acrescentou ganho e o critério de avanço
+falhou. A variante espectral de fatores não foi implementada porque o diagnóstico
+de treino não sustentou a concentração prevista. Manter como controle, sem
+promoção nem abertura da validação ou extensão automática de posto/precisão.
 
 Manter corpus/cobertura comuns na comparação principal; ampliação de dados é
 estudo separável. Outro aumento de largura, refiner ou ajuste lossless requer

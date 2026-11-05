@@ -89,6 +89,17 @@ Razão nominal de índices, tamanho de NPZ e compressão efetiva são medidas di
 - O stress SMF preservou todos os canais e os bits dos NaNs. Preparação de entrada
   afetou bastante os resultados; melhorar apenas o alvo filtrado não demonstrou
   ganho de cobertura integral sob os mesmos bytes e requisitos físicos.
+- A triagem de grade × cardinalidade também não gerou avanço admissível:
+  denso K64 teve frames quase iguais ao compacto K2048, mas RMSE **5,54% pior**.
+  Alfabetos menores economizaram bytes com perda de fidelidade; sem promoção.
+  Quantização por produto/PCA e ajuste curto de centroides pelo decoder também
+  não preservaram a fidelidade nos probes de treino (relatório 79, seção 11).
+- O controle preditivo sem rede também não superou o VQ no mesmo teto de bytes.
+  Seus pontos de maior precisão comprimiram 2,5–4,5×, em taxas diferentes; são
+  referências experimentais, não avanço simultâneo de fidelidade/compressão.
+- Fatores espaciais/temporais transmitidos melhoraram um recorte com menos bytes,
+  mas o ganho guardado agregado foi só **0,174% de distorção**. A busca de postos
+  não ampliou o ganho; segue como controle experimental, sem promoção.
 
 Nos dois conjuntos de validação dos estudos recentes, os streams compactos ficaram
 em torno de **166–173×**, com correlação macro **0,73–0,75**; os densos, em torno de

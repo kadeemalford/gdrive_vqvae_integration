@@ -35,9 +35,13 @@ def unpack(stream, width, count):
 
 
 def compress(raw, budget_bytes, quant_bits=8):
+    return compress_packet(encode(raw), budget_bytes, quant_bits)
+
+
+def compress_packet(packet, budget_bytes, quant_bits=8):
+    """Code an already-protected target without changing its mask or side contract."""
     if not 2 <= quant_bits <= 16 or budget_bytes < 1:
         raise ValueError("Positive budget and 2–16 quantization bits required")
-    packet = encode(raw)
     coefficients = dctn(packet.values, type=2, norm="ortho", workers=1).reshape(-1)
     index_bits = max(1, math.ceil(math.log2(len(coefficients))))
     entry_bits = index_bits + quant_bits

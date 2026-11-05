@@ -1,9 +1,21 @@
 import unittest
 import numpy as np
-from finetuning.sparse_dct_codec import compress, decompress, pack, unpack, HEADER
+from finetuning.sparse_dct_codec import compress, compress_packet, decompress, pack, unpack, HEADER
 
 
 class SparseDctCodecTests(unittest.TestCase):
+    def test_preprotected_packet_preserves_legacy_and_robust_contract(self):
+        from finetuning.reversible_normalization import encode
+        from finetuning.robust_escape import encode_robust
+        raw = np.random.default_rng(13).normal(size=(4, 1000)).astype(np.float32)
+        self.assertEqual(compress(raw, 500)[0], compress_packet(encode(raw), 500)[0])
+        raw[3, 10] = 1e35
+        packet = encode_robust(raw)
+        frame, _ = compress_packet(packet, 500)
+        restored = decompress(frame)
+        np.testing.assert_array_equal(raw.view(np.uint32)[~packet.valid], restored.view(np.uint32)[~packet.valid])
+        self.assertLessEqual(len(frame), 500)
+
     def test_exact_bit_packing(self):
         for width in (3, 8, 13, 27):
             values = np.array([0, 1, 2 ** width - 1], dtype=np.uint32)
