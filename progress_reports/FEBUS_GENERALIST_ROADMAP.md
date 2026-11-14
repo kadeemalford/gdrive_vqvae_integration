@@ -100,6 +100,121 @@ depende de autorização, protocolo, orçamento e critérios próprios. As seç�
 do relatório 79 distinguem o fechamento original, os treinos locais posteriores
 e a rodada mais recente de inferência/busca, sem novos pesos neurais.
 
+**Revisão de otimização e fontes de pré-treino (09/11/2026):** o
+[relatório 80](80-LEARNING_RATE_AND_EXTERNAL_PRETRAINING_REVIEW.md) distingue
+mudanças históricas de LR de uma ablação de scheduler ainda não executada e
+propõe cosine versus controles constantes, com exposição pareada. A nova auditoria
+QuantX inventariou 302 HDF5/192 cenários e examinou sinais de 12 arquivos: fase
+óptica a 10 kHz, geometria e variação lenta diferentes do alvo FEBUS. Esses dados
+são candidatos condicionados à interpretação física/mapa, não inicialização já
+validada nem holdout final. A triagem de fontes públicas prioriza waveforms brutos
+e diversidade de aquisições; testar uma ponte de pré-treino exige controle de
+compute/exposição e avaliação posterior no mesmo FEBUS. Nenhum treino novo foi
+executado nessa revisão; não combinar mudança de scheduler e fonte no mesmo
+contraste causal nem contar bons resultados na fonte como fidelidade no alvo.
+Na continuidade autorizada, o contraste pareado de LR foi lançado em uma única
+RTX 4090 remota, com avaliação de streams após os três braços. A inspeção de dois
+HDF5 públicos de Tomasov et al. confirmou 20 kHz, mas ambos registram readout
+single-pulse sem strain calibrado: reduzir a prioridade dessa ponte até esclarecer
+o produto, em vez de escolhê-la apenas pelo sample rate. Resultados e limitações
+da auditoria estão na seção 8 do relatório 80; não são resultados de transferência.
+A primeira execução de LR foi rejeitada por alias dos contadores AdamW entre
+ramificações; a repetição usa cópias independentes e assertivas de exposição.
+A seção 9 delimita um próximo piloto de ponte QuantX **como fase bruta**, sem
+mapa útil presumido, filtragem ou equivalência com strain-rate: seu valor será
+medido apenas no FEBUS posterior, contra gastar os mesmos updates no alvo.
+Dados e implementação preparados não constituem resultado de pré-treinamento.
+A repetição válida de LR concluiu sem atingir os critérios: cosine ganhou apenas
+0,324% / 0,159% sobre os controles, com mais bytes e regressões por configuração
+([relatório 81](81-LR_SCHEDULE_PAIRED_RESULTS.md)). Não ampliar esse ramo nem
+adotá-lo como default. A próxima hipótese de dados mantém LR constante e pesos
+offshore originais comuns, separando a ponte QuantX do efeito de otimização.
+A ponte QuantX bruta concluiu com **11,47% mais RMSE** que investir os mesmos
+updates diretamente em FEBUS, embora use 4,16% menos bytes
+([relatório 82](82-QUANTX_PRETRAINING_BRIDGE_RESULTS.md)). Não prolongar esse
+braço automaticamente. Um controle de dose FEBUS igual separa a interpretação
+de inicialização da interpretação de orçamento total; ele não muda o comparador
+principal. PoroTomo, com readout nativo proporcional a strain-rate, é candidato
+seguinte após preparação íntegra e auditoria da referência reutilizada.
+O diagnóstico com **a mesma dose final de 8.192 updates FEBUS**, sem a ponte,
+também foi ligeiramente melhor que QuantX: RMSE 0,802886 contra 0,809862. Isso
+não altera a decisão principal por updates totais. O piloto PoroTomo foi lançado
+com a fonte pública íntegra e F reutilizado após auditoria; não equivale a
+confirmação positiva ou validação externa final.
+PoroTomo concluiu com **4,537% menos RMSE que offshore com a mesma dose FEBUS
+curta**, mas 5,494% mais RMSE e 1,728% mais bytes que o controle de updates totais
+([relatório 83](83-POROTOMO_PRETRAINING_BRIDGE_RESULTS.md)). Preservar a evidência
+de transferência condicional, sem promover ou prolongar automaticamente.
+O próximo probe isola síntese versus análise com **IDs VQ originais fixos**;
+não amplia o PQ anterior nem reatribui códigos. Só avançará do treino se superar
+origem/controle; igualdade de índices não dispensa contabilidade de modelo,
+framing e guardas físicas em uma confirmação futura.
+O lookup de síntese com IDs fixos concluiu com só **0,120% de ganho na loss
+normalizada de treino**, sem atingir extensão ou abrir validação. O probe
+seguinte compara contexto derivado apenas dos tokens/forma conhecidos contra
+um controle local de capacidade semelhante, mantendo a rede base congelada
+([relatório 84](84-FIXED_ID_SYNTHESIS_AND_CONTEXT_PROBES.md)). Não interpretar
+esses limiares de triagem como ganho de RMSE físico ou promoção de codec.
+O contexto também concluiu sem atingir avanço: axial ganhou **0,6686% de D
+contra origem e 0,3735% contra local**, após extensão pareada até 2.048 updates.
+Encerrar o probe sem ampliar budget ou abrir validação; a melhora pequena de
+loss não estabelece ganho físico, taxa competitiva ou generalização externa.
+O redirecionamento seguinte isola **MSE + VQ versus 0,5 MSE + 0,5 L1 + VQ**,
+com arquitetura/corpus/batches/optimizer herdado preservados e reutilização do
+controle constante corrigido, se a auditoria passar
+([relatório 85](85-OBJECTIVE_ALIGNMENT_ABLATION.md)). É uma ablação prática do
+objetivo, incluindo escala relativa ao VQ, não promessa de recuperação de ruído
+ou otimização exata do RMSE macro. Sem extensão automática ou relaxamento de guardas.
+Essa ablação concluiu com só **0,269% menos RMSE**, **0,832% mais bytes** e 14
+vetos por configuração/métrica: não promover ou estender. O próximo diagnóstico
+mede taxa condicional nos **coeficientes escalares** de E2 com reconstrução
+bit-exata, banco/side de escala cobrados e marginal empírico como controle
+([relatório 86](86-SCALAR_CONDITIONAL_RATE_DIAGNOSTIC.md)). Ele decide se existe
+motivo mensurável para considerar hyperprior, sem iniciar treinamento por suposição
+ou tratar projeções de amortização como ganho de codec medido.
+O diagnóstico escalar foi negativo: escala local piorou C4 e economizou só
+**0,562% de frames em C16**, com bundles de checks maiores em ambos. Não abrir
+validação completa ou treino de hyperprior a partir disso. O próximo contraste
+isola **contexto antes da quantização**, que pode mudar os IDs escolhidos a partir
+das features contínuas, contra controle local de capacidade semelhante
+([relatório 87](87-CONTEXT_BEFORE_QUANTIZATION_PROBE.md)). Isso difere de adaptar
+tokens já transmitidos; continua sendo triagem de treino, sem promoção por loss.
+O contexto de análise concluiu com **0,6218% de D contra origem e 0,5181% contra
+local**, após a extensão pareada. A vantagem relativa atingiu seu limiar interno,
+mas o ganho contra origem ficou abaixo de 1%: não abrir validação ou estender.
+Encerrar a sequência de pequenos adaptadores da base congelada. Uma eventual
+arquitetura contextual treinada conjuntamente precisa de nova justificativa e
+controle estrutural, sem usar esses probes como prova de inviabilidade geral.
+O contraste autorizado seguinte treina **encoder, codebook e decoder juntamente
+com contexto nas duas pontas**, comparando atenção axial a pointwise com as mesmas
+informações de forma/posição e capacidade semelhante. Fonte, batches, objetivo
+e orçamento ficam congelados; a referência nativa é reutilizada após auditoria
+([relatório 88](88-JOINT_ANALYSIS_SYNTHESIS_CONTEXT_PROTOCOL.md)). Não é continuação
+dos adaptadores congelados nem uma alegação de superioridade por arquitetura.
+O contraste conjunto concluiu: axial teve **0,1121% mais RMSE que pointwise**,
+com 0,4554% menos bytes; frente à CNN nativa ganhou só **0,0237% de RMSE**, com
+0,3401% menos bytes e regressões por configuração. Todos os pesos realmente
+treinaram e os contadores foram auditados. **Encerrar a sequência de contexto
+na mesma grade**, sem promover ou ampliar automaticamente. Outro investimento
+deve justificar mecanismo novo de representação/informação transmitida, não
+apenas repetir intervenções marginais na base atual.
+O protocolo seguinte isola **produto VQ treinado conjuntamente**, não só ajuste
+de centroides com CNN congelada: flat2048 versus produto32×64, ambos11 bits
+nominais e mesma grade. Um piloto de 8.192 updates por braço decide sobre uma
+continuação pareada até **65.536 updates totais novos por braço**, sem forçar
+modelos colapsados ou chamar margens de triagem de aceitação de codec
+([relatório 89](89-JOINT_PRODUCT_VQ_LONG_TRAINING_PROTOCOL.md)). O usuário será
+avisado quando o treino longo for efetivamente lançado, em uma única GPU remota.
+O piloto concluiu com 8.192 updates por braço e gate **reprovado**; a campanha
+de 65.536 não começou. A auditoria encontrou um check inteiramente zero que
+domina mais de 99,99998% do RMSE macro do seletor, comprometendo seu ranking e
+a leitura das curvas, **sem demonstrar colapso neural**. Produto economizou
+7,604% em frames e só 0,2575% no bundle curto, sem promoção ou validação completa.
+Os dados/contadores/streams passaram na auditoria. O relatório 89 preserva o
+gate e documenta a limitação, sem remover o check ou trocar a métrica depois.
+**Continuidade pausada em 14/11 por orientação do usuário: somente auditoria e
+documentação concluídas; nenhuma nova etapa ou fase longa iniciada.**
+
 A CNN residual permanece controle de arquitetura. Atenção temporal/fatorizada e
 contexto multiescala são mecanismos a comparar conforme o gargalo observado.
 O artigo CNN–Transformer com OWR inspira componentes, não classificação/expansão

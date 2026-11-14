@@ -14,7 +14,31 @@ fibras e configurações.
 e limitações documentadas. Ainda não há um modelo generalista final validado para
 operação. O [roadmap](progress_reports/FEBUS_GENERALIST_ROADMAP.md) organiza as
 prioridades; a revisão de direção está no [relatório 77](progress_reports/77-RESEARCH_DIRECTION_REVIEW.md)
-e os resultados mais recentes no [relatório 79](progress_reports/79-ENCODER_RATE_AND_TILE_WEIGHTING.md).
+e os resultados de representação no [relatório 79](progress_reports/79-ENCODER_RATE_AND_TILE_WEIGHTING.md).
+A revisão de LR/fontes externas está no
+[relatório 80](progress_reports/80-LEARNING_RATE_AND_EXTERNAL_PRETRAINING_REVIEW.md);
+o contraste pareado de scheduler foi concluído no
+[relatório 81](progress_reports/81-LR_SCHEDULE_PAIRED_RESULTS.md), sem promoção.
+A ponte de pré-treinamento em fase QuantX e seus controles estão no
+[relatório 82](progress_reports/82-QUANTX_PRETRAINING_BRIDGE_RESULTS.md), também sem promoção.
+O [relatório 83](progress_reports/83-POROTOMO_PRETRAINING_BRIDGE_RESULTS.md) registra
+a transferência condicional de PoroTomo, sem vantagem sobre investir no alvo;
+o [relatório 84](progress_reports/84-FIXED_ID_SYNTHESIS_AND_CONTEXT_PROBES.md) encerra
+os probes de síntese/contexto por ganhos insuficientes. A ablação de objetivo
+MSE versus mistura MSE/L1 concluiu com ganho pequeno e mais bytes no
+[relatório 85](progress_reports/85-OBJECTIVE_ALIGNMENT_ABLATION.md).
+O diagnóstico de probabilidades condicionais dos coeficientes escalares concluiu
+sem economia suficiente, mantendo reconstrução bit-exata
+([relatório 86](progress_reports/86-SCALAR_CONDITIONAL_RATE_DIAGNOSTIC.md)).
+O probe de contexto **antes da quantização** também encerrou abaixo do limiar de
+avanço ([relatório 87](progress_reports/87-CONTEXT_BEFORE_QUANTIZATION_PROBE.md)).
+O contraste de encoder/codebook/decoder e contexto conjuntamente também concluiu
+sem avanço: atenção axial não superou pointwise em fidelidade
+([relatório 88](progress_reports/88-JOINT_ANALYSIS_SYNTHESIS_CONTEXT_PROTOCOL.md)).
+O piloto de produto VQ treinado conjuntamente encerrou com gate reprovado e uma
+limitação auditada do seletor em alvo constante; **o treino longo não começou**.
+Os resultados e a auditoria estão no
+[relatório 89](progress_reports/89-JOINT_PRODUCT_VQ_LONG_TRAINING_PROTOCOL.md).
 
 ## Dados e objetivo de fidelidade
 
@@ -100,6 +124,13 @@ Razão nominal de índices, tamanho de NPZ e compressão efetiva são medidas di
 - Fatores espaciais/temporais transmitidos melhoraram um recorte com menos bytes,
   mas o ganho guardado agregado foi só **0,174% de distorção**. A busca de postos
   não ampliou o ganho; segue como controle experimental, sem promoção.
+- Cosine decay melhorou o RMSE em **0,16–0,32% sobre controles de LR constante**
+  com exposição pareada, mas aumentou bytes e apresentou regressões por configuração.
+  O resultado não justificou ampliar o ramo ou mudar o LR padrão (relatório 81).
+- A ponte de fase QuantX teve **11,47% mais RMSE** que investir os mesmos updates
+  diretamente em FEBUS, embora economize 4,16% dos bytes. Com dose FEBUS final
+  igual, também não houve ganho macro; isso não descarta todo uso de QuantX ou
+  de outras fontes, mas encerra essa continuidade bruta (relatório 82).
 
 Nos dois conjuntos de validação dos estudos recentes, os streams compactos ficaram
 em torno de **166–173×**, com correlação macro **0,73–0,75**; os densos, em torno de
