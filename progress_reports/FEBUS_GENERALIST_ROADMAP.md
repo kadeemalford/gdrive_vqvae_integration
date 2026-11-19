@@ -58,7 +58,45 @@ e codificação dos índices também tiveram ganhos limitados na comparação po
 Esses resultados caracterizam a família de codecs testada, não um limite geral
 da compressão neural FEBUS.
 
-**A prioridade passa à eficiência da representação por bit**, conforme a revisão
+### Direção atual após o encerramento de H1–H5
+
+A revisão [106 — viabilidade e novo direcionamento](106-FEBUS_FEASIBILITY_AND_RESEARCH_REDIRECTION.md)
+prioriza distinguir limitações de fonte, dados, representação/otimização e taxa
+antes de outra campanha arquitetural:
+
+1. Definir a precisão física requerida e o contrato completo de transporte.
+2. Localizar o déficit com controles já existentes e contexto de treino/inferência
+   compatível; caracterizar a faixa entre VQ ultracompacto e alta precisão.
+3. Curar a proveniência e adquirir sessões que repitam condições e separem
+   hardware, excitação e montagem.
+4. Escolher uma única candidata neural conforme a oportunidade demonstrada.
+   Codificação probabilística direta de valores quantizados é a opção principal
+   se houver dependência condicional que se pague; não há ganho presumido.
+
+A revisão identificou que H4 usou tolerâncias de 0,1%/0,03%/0,01% da mediana
+de desvio usada na calibração, e que diversidade/FiLM treinaram em oito canais
+com avaliação full-tile. Esses limites de interpretação não alteram seus gates.
+Fontes recentes da literatura frequentemente avaliam sinais filtrados ou
+reamostrados; seus ratios não certificam o objetivo FEBUS integral.
+
+**Estado:** o [relatório 107](107-FEASIBILITY_CONTRACT_AND_EXECUTION_HANDOFF.md)
+implementa métricas prospectivas e planejamento de contexto, define os contratos
+F0–F4 e congela por metadados 20 arquivos para F1. O pool preliminar F2 contém
+32 arquivos após exclusão de componentes ligados aos checks; C1 e C4 não tem
+componentes suficientes para fit/check nesse pool. O
+[relatório 108](108-FEASIBILITY_DIAGNOSTICS_EXECUTION.md) conclui o replay F1
+com 414 forwards e forte sensibilidade de contexto nos controles de crop;
+isso prioriza compatibilidade de preparação/representação, sem demonstrar
+ganho de codec. O manifesto temporal F2 foi revalidado sob as premissas de
+relógio aceitas, e o [protocolo 117](117-FEBUS_CONTINUOUS_F2_PROBE.md) define
+a leitura exata dos trechos; C1/C4 segue fora. H1–H5 encerradas nos desenhos
+registrados, VQ maduro como referência e P3 sem candidato elegível.
+Eventual execução futura limita-se a **uma GPU remota**, com braços sequenciais.
+700× continua exploratório; não há limite informacional FEBUS demonstrado.
+
+### Fundamentação das revisões anteriores
+
+**Eficiência da representação por bit** foi a prioridade definida na revisão
 do [relatório 77](77-RESEARCH_DIRECTION_REVIEW.md):
 
 1. **Fixar o alvo/cobertura e o compromisso físico antes de outra campanha longa:**
@@ -89,6 +127,64 @@ do [relatório 77](77-RESEARCH_DIRECTION_REVIEW.md):
    perderam fidelidade. Nenhum passou as guardas. As curvas ainda melhoravam:
    não confundir o negativo curto com convergência ou refutação estrutural.
    Contexto temporal longo segue condicional; o AR não sustentou lags extras.
+
+### Situação das hipóteses da revisão 90
+
+As referências abaixo usam a **numeração atual dos documentos**, em sequência.
+Identificadores históricos de protocolos e artefatos dentro deles foram preservados.
+
+| Relatório atual | Etapa | Evidência e decisão |
+|---|---|---|
+| [90](90-FIDELITY_PER_BIT_NEXT_RESEARCH_REVIEW.md) | Revisão de direção | Hipóteses H1–H5 e expansão de dados; propostas não equivalem a experimentos concluídos. |
+| [91](91-PROSPECTIVE_PREPARATION_AND_SPATIAL_OPPORTUNITY.md) | Preparação e oportunidade espacial | Métricas prospectivas, constantes/fracos, roundtrip e contexto decodificado; preparação comum auditada. |
+| [92](92-LEARNED_LIFTING_STUDY.md) | H1: lifting, coder e alocação | Economia lossless do coder não promoveu a representação; o contraste não deslocou a fronteira prática. |
+| [93](93-NEURAL_ANCHOR_INNOVATION_STUDY.md) | H2: âncoras e inovação | Treino conjunto melhorou o controle independente, mas não o VQ maduro; ambos os streams são pagos. |
+| [94](94-ENCODER_OBSERVATION_STUDY.md) | Observação completa do encoder | Ganho pequeno e gate reprovado; observações adicionais só chegam ao receptor pelos índices pagos. |
+| [95](95-FROZEN_DEVELOPMENT_VALIDATION.md) | Validação congelada | O ganho de H2 transferiu contra seu controle, não contra a referência prática. Desenvolvimento consumido, não confirmação independente. |
+| [96](96-FULL_TILE_BOTTLENECK_DIAGNOSTIC.md) | Gargalos full-tile | Residual lag1 pouco correlacionado e covariância latente concentrada; não são limites informacionais. |
+| [97](97-DENSE_PRODUCT_AND_RATE_MATCH_STUDY.md) | Produto VQ e curva de taxa | Menos bytes com mais erro; taxas não sobrepostas não demonstram dominância e não autorizam interpolação favorável. |
+| [98](98-PHYSICAL_METADATA_AND_PROVENANCE.md) | H3: inventário e proveniência | Hardware constante por configuração e sessões não certificadas. 81 clocks distintos não provam independência; derivados FFT não são novas aquisições. O contraste restrito posterior está em 105. |
+| [99](99-CLOCK_ALIGNED_MULTICORE_OPPORTUNITY.md) | H5: dependência multicore | Gate linear e novo coder de magnitude reprovados. Todos os 24 checks usaram fallback; setup neural acrescentou 0,135% aos bytes, com bits físicos idênticos. Sem extensão de buckets/lags. |
+| [100](100-LOCAL_INTERNAL_NORMALIZATION_STUDY.md) | H3: normalização interna | Via local ativa, função inicial e controles preservados; sem ganho prático e sem extensão. |
+| [101](101-RESEARCH_SEQUENCE_CONSOLIDATION.md) | Budgets e decisões | Registro inicial de 245.760 updates; fechamento posterior totaliza 356.352, com tipos de exposição e coortes discriminados. |
+| [102](102-DIRECT_DISCRETE_INDEX_STUDY.md) | Decisão discreta de índices | Ganho escalar com cap de bytes, mas SSE bruto pior em oito grupos e erro espectral em 25/30 pares; sem promoção ou distilação. |
+| [103](103-ERROR_BOUNDED_RESIDUAL_STUDY.md) | H4: residual com erro controlado | Garantia verificada em três precisões; base VQ não trouxe ganho consistente. Residual neural causal poupou 0,378% a bits físicos idênticos, abaixo do gate; sem extensão. |
+| [104](104-SEMISYNTHETIC_AUGMENTATION_STUDY.md) | Dados: composição e diversidade | Composição reprovada; curva 4/6/10 concluída: seis melhora o erro de quatro com mais bytes, dez piora a fidelidade. Não monotônica, sem extensão; não equivale a sessões independentes. |
+| [105](105-PHYSICAL_CONDITIONING_STUDY.md) | H3: metadados versus configuração | Três braços concluídos: hardware poupou só 0,70% de erro contra constante, com 3,41% mais bytes, e perdeu para categoria nas combinações excluídas. Sem extensão; não certifica transferência entre sessões. |
+| [106](106-FEBUS_FEASIBILITY_AND_RESEARCH_REDIRECTION.md) | Nova revisão de viabilidade | Avaliação dos limites de dados/modelo/taxa, literatura e curadoria. Recomenda investigação discriminante e novas sessões antes de uma candidata neural; sem novo treino. |
+| [107](107-FEASIBILITY_CONTRACT_AND_EXECUTION_HANDOFF.md) | Contratos e delegação F0–F4 | Métricas de fase com suporte no alvo, contexto pareado, painel de metadados e ordens de execução. Sem novo score FEBUS; F3 e seleção de F4 permanecem condicionais. |
+| [108](108-FEASIBILITY_DIAGNOSTICS_EXECUTION.md) | Execução F1/F2 | F1 conclui com sensibilidade de contexto, sem ganho de codec medido. Coder validado em 50 casos sintéticos com precisão/roundtrip auditados; D2c FEBUS bloqueado por contrato temporal. |
+| [109](109-FEBUS_FULL_COVERAGE_CONTEXT_CONTRAST.md) | Contexto a bytes completos | Partição em oito canais reduz erro do FiLM com +140,3% em bytes; não se torna candidata. |
+| [110](110-FEBUS_TEMPORAL_CONTRACT_SENSITIVITY.md) | Sensibilidade temporal | Critério por envelopes não valida o relógio e perde contraste multicore; D2c segue bloqueado. |
+| [111](111-FEBUS_TRAIN_INFERENCE_CONTEXT_ALIGNMENT.md) | Treino com contexto alinhado | Contraste F4-B escolhido; ambas as inferências mantêm full-tile e mesma geometria nominal. |
+| [112](112-FEBUS_SHORT_WINDOW_ENTROPY_TRIAGE.md) | Triagem F2 em janelas curtas | Economia de transporte, sem ganho inicial no objeto completo. |
+| [113](113-FEBUS_FROZEN_INSTALLATION_AMORTIZATION.md) | Amortização e transferência F2 | Economia de 5,20% e 14,10% na transferência com instalação; critério conjunto não passou. |
+| [114](114-FEBUS_DEPLOYMENT_DECISION_AUDIT.md) | Referências provisórias | Marcos de pesquisa, não tolerância de produto. |
+| [115](115-FEBUS_POOLED_CONTEXT_TABLES.md) | Redução da tabela contextual | Contraste encerrado: mais bytes totais no primário. |
+| [116](116-FEBUS_COMPACT_VQ_WIRE_PROTOCOL.md) | Wire VQ compacto | Economia localizada de 2,9944%, sem promoção. |
+| [117](117-FEBUS_CONTINUOUS_F2_PROBE.md) | F2 contínuo | Protocolo em 30 arquivos, sob as premissas de relógio aceitas; sem certificar sessões. |
+
+**Rodada encerrada:** os contrastes registrados de H1–H5 terminaram sem candidato
+promovido. A revisão 106 propõe uma nova direção; o relatório 107 registra a
+autorização de avanço e os contratos/preflights para execução delegada.
+H4 cobrou a correção necessária para um contrato
+físico; suas precisões experimentais não são tolerâncias operacionais validadas.
+Composição semissintética e curva de diversidade foram avaliadas em 104,
+sem candidato promovido; não equivalem a adquirir novas sessões. Novas
+variantes de dados exigem mecanismo distinto, origem e prevenção de vazamento.
+Generalização física entre sessões permanece condicionada à proveniência.
+
+O estudo 105 avaliou parte desse adiamento com exclusão explícita de
+combinações e controle categórico, partindo de OOI original, não do VQ que já
+viu os grupos. Essa é uma pergunta mecanística mais limitada que generalização
+física entre aquisições: proveniência e unidades nativas ainda devem ser
+declaradas. O resultado negativo não autoriza extensão nem libera as reservas.
+O novo mecanismo H5 em 99 também terminou negativo; a consolidação 101
+discrimina seus budgets e coortes, sem novo ranking global.
+
+Nenhum candidato atual autoriza P3. Não repetir gates/sweeps reprovados ou trocar
+métrica retrospectivamente; preservar teste fold0 e EDAS. Footprint de modelo,
+transporte com pesos compartilhados e objeto autocontido são contratos distintos.
 
 Ampliação isolada de largura, novos refiners/seletores ROI e ajustes de empacotamento
 têm prioridade reduzida; sua retomada exige uma hipótese adicional sustentada

@@ -1,0 +1,1 @@
+source_id,session_id,parent_source_id,is_derived,acquired_at_utc,device_id,fiber_id,site_id,excitation_protocol,variable,unit,source_dtype,dt_s,dx_m,gauge_length_m,pulse_width_value,pulse_width_unit,derivation_time_s,partition_role,source_sha256

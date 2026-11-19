@@ -1,0 +1,58 @@
+{
+  "inputs": {
+    "channel_maps": {
+      "path": "data/finetune/spatial_band_v1_fold0_20261024/channel_maps.jsonl",
+      "sha256": "1799e5fa64d4ce80dd405c1b32402f11c93d0a363e1649ff45a366f5616045fc"
+    },
+    "checks": {
+      "path": "results/experiments/physical_conditioning_20261115/scientific/constant/protocol.json",
+      "sha256": "b9788c790855335e36ab66f46ecc4be65b42a07572a94f7c5a0e12639bcd0766"
+    },
+    "clock_exclusions": {
+      "path": "results/experiments/feasibility_clock_envelopes_20261118/results.json",
+      "sha256": "1fe50b17fe13acc92f903cd04fbab8d90a014eb03f0906c19ba79a7605cf33f0"
+    },
+    "manifest": {
+      "path": "data/finetune/spatial_band_v1_fold0_20261024/samples_manifest.csv",
+      "sha256": "af3546dd5e5cc1456364f77acd0438576c4921baa55a6ebd3999d5062415fc47"
+    },
+    "mature_registry": {
+      "path": "results/experiments/direct_discrete_expanded_20261115/gradient/registry.zlib",
+      "sha256": "766015b97eeb4b1634f01b101befcb9a48159395ac9118bbbfff9a31f701a421"
+    },
+    "metadata": {
+      "path": "results/experiments/feasibility_definition_20261117/metadata_freeze.json",
+      "sha256": "23cc0abe3873bbcd469178a07bcaed85e0be169f6b0801b6efa2cc6967d6e819"
+    },
+    "reference_scales": {
+      "path": "results/experiments/prospective_p0_v2_fold0_20261114/reference_scales.json",
+      "sha256": "dcd67093f3963ab25048ca8f87c224da8c9e8b72f6c52cea97bffea95554cdf2"
+    }
+  },
+  "kind": "feasibility-context-alignment-definition-v1",
+  "mature": {
+    "config": {
+      "activation_checkpointing": true,
+      "architecture": "native-v1",
+      "base_channels": 64,
+      "commitment_cost": 0.25,
+      "downsample_levels": 4,
+      "embedding_dim": 128,
+      "exact_eval_quantization": true,
+      "latent_geometry": "spatial4-temporal4",
+      "num_embeddings": 2048
+    },
+    "path": "results/remote_setup/dense_transfer_fold0_weights_p93.pt",
+    "sha256": "b943db9f5cf6418e61ffca1814d788ac23fd6111468a425a918ba7d7cb5bc593",
+    "update": null
+  },
+  "scientific_report": {
+    "path": "progress_reports/archive/feasibility_protocols_20261118/111-FEBUS_TRAIN_INFERENCE_CONTEXT_ALIGNMENT.md",
+    "sha256": "b17d46afd638f2fc6fde14cc08fae618009d0a8ac75f290b7e1b5c587f5485bf"
+  },
+  "selection": "fixed_endpoint",
+  "source": {
+    "path": "models/febus_finetune_base/best.pt",
+    "sha256": "7d2da0d1cbd1d3dae579d7fd900850afc9ef15f645ea844168c0f78f18b0a27c"
+  }
+}
