@@ -42,7 +42,7 @@ def upload(sftp, relative, backup):
     if previous is not None:
         saved = f"{backup}/{relative}"
         mkdirs(sftp, str(Path(saved).parent))
-        with sftp.open(saved, "xb") as stream:
+        with sftp.open(saved, "x+b") as stream:
             stream.write(previous)
     mkdirs(sftp, str(Path(target).parent))
     temporary = target + ".feasibility_upload"

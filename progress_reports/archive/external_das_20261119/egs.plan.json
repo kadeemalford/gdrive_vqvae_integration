@@ -1,0 +1,201 @@
+{
+  "dataset": "data_product/data",
+  "length": 2000,
+  "ratios": [
+    0.03,
+    0.1
+  ],
+  "report_sha256": "f23725fd954e03f5c04d23261ddd94b123fbfc01eda2fb278f1893962c8e1787",
+  "rows": [
+    {
+      "etag": "\"235e699d9104d378c476b1c24c249bb5-240\"",
+      "key": "UTC-YMD20220317-HMS223322.842/CollabExp2_taps_velocity_UTC-YMD20220317-HMS223322.842_seq_00000000000.hdf5",
+      "metadata": {
+        "acoustic_bandwidth_end": "18000.0",
+        "clock_intervals": [
+          [
+            1647556404.4430351,
+            1647556404.498519
+          ],
+          [
+            1647556418.8437288,
+            1647556418.899414
+          ]
+        ],
+        "data_product": "velocity",
+        "data_product_units": "m/s",
+        "dt_computer": "2.777777777777778e-05",
+        "dx": "2.4502857212913773",
+        "file_start_computer_time_string": "2022-03-17T22:33:22.842196Z",
+        "frame_size": "5760",
+        "gauge_length": "4.9",
+        "gps_locked": "False",
+        "nframes_occupied": "320",
+        "saving_start_computer_time_string": "2022-03-17T22:33:22.842196Z",
+        "sensing_range_start": "1.8",
+        "serial_number": "T216125"
+      },
+      "object_bytes": 2005438610,
+      "role": "fit",
+      "session": "A",
+      "stamp": "20220317-HMS223322.842"
+    },
+    {
+      "etag": "\"954ad655116a811672beecede47d38c8-240\"",
+      "key": "UTC-YMD20220318-HMS155708.284/CollabExp2_velocity_UTC-YMD20220318-HMS155708.284_seq_00000000000.hdf5",
+      "metadata": {
+        "acoustic_bandwidth_end": "18000.0",
+        "clock_intervals": [
+          [
+            1647619029.8840978,
+            1647619029.9393516
+          ],
+          [
+            1647619044.282551,
+            1647619044.339769
+          ]
+        ],
+        "data_product": "velocity",
+        "data_product_units": "m/s",
+        "dt_computer": "2.777777777777778e-05",
+        "dx": "2.4502857212913773",
+        "file_start_computer_time_string": "2022-03-18T15:57:08.284318Z",
+        "frame_size": "5760",
+        "gauge_length": "4.9",
+        "gps_locked": "False",
+        "nframes_occupied": "320",
+        "saving_start_computer_time_string": "2022-03-18T15:57:08.284318Z",
+        "sensing_range_start": "1.8",
+        "serial_number": "T216125"
+      },
+      "object_bytes": 2005438610,
+      "role": "fit",
+      "session": "B",
+      "stamp": "20220318-HMS155708.284"
+    },
+    {
+      "etag": "\"2be78be127dbe9481a4ab9a6648e6ff2-240\"",
+      "key": "UTC-YMD20220322-HMS182523.983/CollabExp2_velocity_UTC-YMD20220322-HMS182523.983_seq_00000000000.hdf5",
+      "metadata": {
+        "acoustic_bandwidth_end": "18000.0",
+        "clock_intervals": [
+          [
+            1647973525.5830452,
+            1647973525.6394513
+          ],
+          [
+            1647973539.986652,
+            1647973540.0410137
+          ]
+        ],
+        "data_product": "velocity",
+        "data_product_units": "m/s",
+        "dt_computer": "2.777777777777778e-05",
+        "dx": "2.4502857212913773",
+        "file_start_computer_time_string": "2022-03-22T18:25:23.983419Z",
+        "frame_size": "5760",
+        "gauge_length": "4.9",
+        "gps_locked": "False",
+        "nframes_occupied": "320",
+        "saving_start_computer_time_string": "2022-03-22T18:25:23.983419Z",
+        "sensing_range_start": "1.8",
+        "serial_number": "T216125"
+      },
+      "object_bytes": 2005438610,
+      "role": "check",
+      "session": "C",
+      "stamp": "20220322-HMS182523.983"
+    },
+    {
+      "etag": "\"890f4bc0f9a709f1a48c95a2329400e5-240\"",
+      "key": "UTC-YMD20220517-HMS060211.867/CollabExp2_velocity_UTC-YMD20220517-HMS060211.867_seq_00000000000.hdf5",
+      "metadata": {
+        "acoustic_bandwidth_end": "18000.0",
+        "clock_intervals": [
+          [
+            1652767333.4676137,
+            1652767333.5228467
+          ],
+          [
+            1652767347.8662486,
+            1652767347.9218702
+          ]
+        ],
+        "data_product": "velocity",
+        "data_product_units": "m/s",
+        "dt_computer": "2.777777777777778e-05",
+        "dx": "2.4502857212913773",
+        "file_start_computer_time_string": "2022-05-17T06:02:11.867334Z",
+        "frame_size": "5760",
+        "gauge_length": "4.9",
+        "gps_locked": "False",
+        "nframes_occupied": "320",
+        "saving_start_computer_time_string": "2022-05-17T06:02:11.867334Z",
+        "sensing_range_start": "1.8",
+        "serial_number": "T216125"
+      },
+      "object_bytes": 2005438610,
+      "role": "check",
+      "session": "D",
+      "stamp": "20220517-HMS060211.867"
+    }
+  ],
+  "source_credit": "Rodriguez Tribaldos & Hopp, EGS Collab Experiment 2 DAS, GDR 1606, CC BY 4.0",
+  "sources": {
+    "acquisition/public_hdf5_ranges.py": {
+      "bytes": 3008,
+      "sha256": "e328cdb67cf6239c7d1335c49b938c19070d5f311b460afff16d1ee0133997a4"
+    },
+    "compression/feasibility_installation_envelope.py": {
+      "bytes": 2190,
+      "sha256": "5567863b376534a11a86b1258791ea47ac4c6e21fad34d142bda1dea7eb5f08d"
+    },
+    "compression/feasibility_portable.py": {
+      "bytes": 7513,
+      "sha256": "2d754290aca3bc4bf2dcb02f5c8164711c137352136edce8868c1ddb7fcbfd45"
+    },
+    "compression/feasibility_stream.py": {
+      "bytes": 11074,
+      "sha256": "b2097fa790a5eeaeea1b0567297f7c4aa49e2f5a391d59fa1ba851a1390365b1"
+    },
+    "compression/feasibility_tables.py": {
+      "bytes": 9806,
+      "sha256": "2b71a9775dfc0e5632e5bc00f8b0053bf4b94f3df0ab7592a8b59e6b65c5a701"
+    },
+    "finetuning/run_external_egs_routing.py": {
+      "bytes": 11829,
+      "sha256": "0dcc2817461d9bc46754f2e3e48312d5f63723dba8ace1695bc92d318d822c5f"
+    },
+    "finetuning/run_feasibility_fit_routing.py": {
+      "bytes": 24385,
+      "sha256": "ab2cc6a6fa40bc4389d60fdd49a466652f0cdeb920ed81e547f9c91ffd0168f9"
+    },
+    "finetuning/run_feasibility_npz_probe.py": {
+      "bytes": 24622,
+      "sha256": "892e1e983daf69b3137f3b6ec214dc9ab94584556bb85b272171c0d75bcc1573"
+    }
+  },
+  "starts": [
+    57600,
+    576000
+  ],
+  "subsets": {
+    "A0B1": [
+      0,
+      3
+    ],
+    "Aonly": [
+      0,
+      1
+    ],
+    "B0A1": [
+      2,
+      1
+    ],
+    "Bonly": [
+      2,
+      3
+    ]
+  },
+  "width": 268
+}

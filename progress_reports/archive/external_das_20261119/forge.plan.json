@@ -1,0 +1,179 @@
+{
+  "attribution": "Ajo-Franklin et al., Utah FORGE April 2024, GDR 1824, CC BY 4.0",
+  "first_trace_zero_based": 500,
+  "protocol_sha256": "6e144ffd6bfd3f0f7a0c908a867657662e47c78cd679753e8d6c848e78920c86",
+  "ratios": [
+    0.03,
+    0.1
+  ],
+  "rows": [
+    {
+      "header": {
+        "calibration": "C14 AMPLITUDE VALUES PROPORTIONAL TO STRAINRATE; SC= X11600 TO NM/M/S",
+        "gps_utc": "2024-04-03T23:30:50.929062+00:00",
+        "header_sha256": "d46a1e704703abb6370323814882987fa88bf1562975400848168b9f9f02f127",
+        "parent": "C6 ORIGINAL FILE: 16BConst_Stimulation_UTC_20240403_233025.719.h5",
+        "text_dt": "C11 FIRST SAMPLE 0MSEC, IEEE32FP, SR:1000MS"
+      },
+      "key": "FORGE/2024_04_stimulation/GDR1824_FOGMORE_triggered_DAS_events/16A_4/16B/v1.0.0/SILIXA_Carina22002_20240403233050.929.sgy",
+      "role": "fit",
+      "size": 43088400,
+      "stage": "16A_4",
+      "stamp": "20240403233050.929",
+      "tag": "\"996fcdd8bdf78946f44b4081ade950b8-6\"",
+      "well": "16B"
+    },
+    {
+      "header": {
+        "calibration": "C14 AMPLITUDE VALUES PROPORTIONAL TO STRAINRATE; SC= X11600 TO NM/M/S",
+        "gps_utc": "2024-04-03T23:30:50.929062+00:00",
+        "header_sha256": "e4009cdc233efc3c7363dc7290f5aac79b8a473bfab3c8012f5c6922e5f4cac7",
+        "parent": "C6 ORIGINAL FILE: 78B-32_1kHz_cont_UTC_20240403_233047.465.h5",
+        "text_dt": "C11 FIRST SAMPLE 0MSEC, IEEE32FP, SR:1000MS"
+      },
+      "key": "FORGE/2024_04_stimulation/GDR1824_FOGMORE_triggered_DAS_events/16A_4/78B/v1.0.0/SILIXA_iDAS19093_20240403233050.929.sgy",
+      "role": "fit",
+      "size": 16454160,
+      "stage": "16A_4",
+      "stamp": "20240403233050.929",
+      "tag": "\"bd680224cad5a91f70333ad688015f09-2\"",
+      "well": "78B"
+    },
+    {
+      "header": {
+        "calibration": "C14 AMPLITUDE VALUES PROPORTIONAL TO STRAINRATE; SC= X11600 TO NM/M/S",
+        "gps_utc": "2024-04-04T04:45:20.949062+00:00",
+        "header_sha256": "d74ff8f93a5209254da974ecfae098e1cfce57d3cd44ce148b39a83b53359970",
+        "parent": "C6 ORIGINAL FILE: 16BConst_Stimulation_UTC_20240404_044455.719.h5",
+        "text_dt": "C11 FIRST SAMPLE 0MSEC, IEEE32FP, SR:1000MS"
+      },
+      "key": "FORGE/2024_04_stimulation/GDR1824_FOGMORE_triggered_DAS_events/16A_5/16B/v1.0.0/SILIXA_Carina22002_20240404044520.949.sgy",
+      "role": "fit",
+      "size": 43088400,
+      "stage": "16A_5",
+      "stamp": "20240404044520.949",
+      "tag": "\"c76df84de19089bc2deb152200d51ff7-6\"",
+      "well": "16B"
+    },
+    {
+      "header": {
+        "calibration": "C14 AMPLITUDE VALUES PROPORTIONAL TO STRAINRATE; SC= X11600 TO NM/M/S",
+        "gps_utc": "2024-04-04T04:45:20.949062+00:00",
+        "header_sha256": "eece67dace23d2d853a2855c90438126a3d230d02b56f9b05a9bd859eff29a4b",
+        "parent": "C6 ORIGINAL FILE: 78B-32_1kHz_cont_UTC_20240404_044517.465.h5",
+        "text_dt": "C11 FIRST SAMPLE 0MSEC, IEEE32FP, SR:1000MS"
+      },
+      "key": "FORGE/2024_04_stimulation/GDR1824_FOGMORE_triggered_DAS_events/16A_5/78B/v1.0.0/SILIXA_iDAS19093_20240404044520.949.sgy",
+      "role": "fit",
+      "size": 16454160,
+      "stage": "16A_5",
+      "stamp": "20240404044520.949",
+      "tag": "\"6ebe48425706934e68cae071879a71ef-2\"",
+      "well": "78B"
+    },
+    {
+      "header": {
+        "calibration": "C14 AMPLITUDE VALUES PROPORTIONAL TO STRAINRATE; SC= X11600 TO NM/M/S",
+        "gps_utc": "2024-04-05T15:30:00.763449+00:00",
+        "header_sha256": "308730493eaf03d5f1e95947bb462a95ca1dd31581d87884b1059710d929899e",
+        "parent": "C6 ORIGINAL FILE: 16BConst_Stimulation_UTC_20240405_152952.043.h5",
+        "text_dt": "C11 FIRST SAMPLE 0MSEC, IEEE32FP, SR:1000MS"
+      },
+      "key": "FORGE/2024_04_stimulation/GDR1824_FOGMORE_triggered_DAS_events/16A_8/16B/v1.0.0/SILIXA_Carina22002_20240405153000.763.sgy",
+      "role": "check",
+      "size": 43088400,
+      "stage": "16A_8",
+      "stamp": "20240405153000.763",
+      "tag": "\"79d3307ebb923c2d6641802d01299f1e-6\"",
+      "well": "16B"
+    },
+    {
+      "header": {
+        "calibration": "C14 AMPLITUDE VALUES PROPORTIONAL TO STRAINRATE; SC= X11600 TO NM/M/S",
+        "gps_utc": "2024-04-05T15:30:00.763449+00:00",
+        "header_sha256": "d4ccefa670bf51fa2b4a2dc64a0f598b807c092f0a47922bd56c6800a2cabd5c",
+        "parent": "C6 ORIGINAL FILE: 78B-32_1kHz_cont_UTC_20240405_152947.437.h5",
+        "text_dt": "C11 FIRST SAMPLE 0MSEC, IEEE32FP, SR:1000MS"
+      },
+      "key": "FORGE/2024_04_stimulation/GDR1824_FOGMORE_triggered_DAS_events/16A_8/78B/v1.0.0/SILIXA_iDAS19093_20240405153000.763.sgy",
+      "role": "check",
+      "size": 16454160,
+      "stage": "16A_8",
+      "stamp": "20240405153000.763",
+      "tag": "\"1ad73e0b3a7e8bde51b66922f10232dc-2\"",
+      "well": "78B"
+    },
+    {
+      "header": {
+        "calibration": "C14 AMPLITUDE VALUES PROPORTIONAL TO STRAINRATE; SC= X11600 TO NM/M/S",
+        "gps_utc": "2024-04-06T13:49:47.723470+00:00",
+        "header_sha256": "0f39681d8e0a2b515af30d40fa99a9d37b9a49897b96db9cfb54cba94828e79b",
+        "parent": "C6 ORIGINAL FILE: 16BConst_Stimulation_UTC_20240406_134945.783.h5",
+        "text_dt": "C11 FIRST SAMPLE 0MSEC, IEEE32FP, SR:1000MS"
+      },
+      "key": "FORGE/2024_04_stimulation/GDR1824_FOGMORE_triggered_DAS_events/16A_9/16B/v1.0.0/SILIXA_Carina22002_20240406134947.723.sgy",
+      "role": "check",
+      "size": 43088400,
+      "stage": "16A_9",
+      "stamp": "20240406134947.723",
+      "tag": "\"b48d812a92262380a68a20d8917113b8-6\"",
+      "well": "16B"
+    },
+    {
+      "header": {
+        "calibration": "C14 AMPLITUDE VALUES PROPORTIONAL TO STRAINRATE; SC= X11600 TO NM/M/S",
+        "gps_utc": "2024-04-06T13:49:47.723470+00:00",
+        "header_sha256": "3d465a6ba4af1475c4dbc08d6b5512211cb0eef90102c15b831ed3b4b07410c8",
+        "parent": "C6 ORIGINAL FILE: 78B-32_1kHz_cont_UTC_20240406_134947.437.h5",
+        "text_dt": "C11 FIRST SAMPLE 0MSEC, IEEE32FP, SR:1000MS"
+      },
+      "key": "FORGE/2024_04_stimulation/GDR1824_FOGMORE_triggered_DAS_events/16A_9/78B/v1.0.0/SILIXA_iDAS19093_20240406134947.723.sgy",
+      "role": "check",
+      "size": 16454160,
+      "stage": "16A_9",
+      "stamp": "20240406134947.723",
+      "tag": "\"c35c17b74e2db79363fcb2b7582d4279-2\"",
+      "well": "78B"
+    }
+  ],
+  "samples": 3000,
+  "sources": {
+    "acquisition/public_hdf5_ranges.py": {
+      "bytes": 3008,
+      "sha256": "e328cdb67cf6239c7d1335c49b938c19070d5f311b460afff16d1ee0133997a4"
+    },
+    "compression/feasibility_installation_envelope.py": {
+      "bytes": 2190,
+      "sha256": "5567863b376534a11a86b1258791ea47ac4c6e21fad34d142bda1dea7eb5f08d"
+    },
+    "compression/feasibility_portable.py": {
+      "bytes": 7513,
+      "sha256": "2d754290aca3bc4bf2dcb02f5c8164711c137352136edce8868c1ddb7fcbfd45"
+    },
+    "compression/feasibility_stream.py": {
+      "bytes": 11074,
+      "sha256": "b2097fa790a5eeaeea1b0567297f7c4aa49e2f5a391d59fa1ba851a1390365b1"
+    },
+    "compression/feasibility_tables.py": {
+      "bytes": 9806,
+      "sha256": "2b71a9775dfc0e5632e5bc00f8b0053bf4b94f3df0ab7592a8b59e6b65c5a701"
+    },
+    "finetuning/run_external_egs_routing.py": {
+      "bytes": 11829,
+      "sha256": "0dcc2817461d9bc46754f2e3e48312d5f63723dba8ace1695bc92d318d822c5f"
+    },
+    "finetuning/run_external_forge_routing.py": {
+      "bytes": 10755,
+      "sha256": "a1334ca46a0bc1a27a4c878674de0f34cd7506cbc7decf2d74ea863df33dc10d"
+    },
+    "finetuning/run_feasibility_fit_routing.py": {
+      "bytes": 24385,
+      "sha256": "ab2cc6a6fa40bc4389d60fdd49a466652f0cdeb920ed81e547f9c91ffd0168f9"
+    },
+    "finetuning/run_feasibility_npz_probe.py": {
+      "bytes": 24622,
+      "sha256": "892e1e983daf69b3137f3b6ec214dc9ab94584556bb85b272171c0d75bcc1573"
+    }
+  },
+  "traces": 256
+}

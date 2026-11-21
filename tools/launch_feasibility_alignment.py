@@ -106,7 +106,7 @@ def main():
                 if fresh:
                     audit["selected"] = {"host": "aumo-gpu-001", **fresh}
                     archive_local(audit_path, audit)
-                    with sftp.open(backup + "/device.json", "xb") as stream:
+                    with sftp.open(backup + "/device.json", "x+b") as stream:
                         stream.write(audit_path.read_bytes())
                     invocation = (
                         f"cd {shlex.quote(REMOTE)} && "

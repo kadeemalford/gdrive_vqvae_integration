@@ -2,3 +2,6 @@
 tentar achar artigos que treinam os tipos de familias de interesse (smf, mmf, doped e mcf) e
 testar cada um em todos os datasets para ter um avaliação justa (modelos treinadas em só um tipo de fibra tbm sao testados em 
 outros tipos de fibra e o modelo generalista febus é testado em todos)
+- reavaliar a mudança do learning rate
+- avaliar loss fisico
+- comparação do melhor modelo vqvae com modelos classicos para tentar definir um referencia de qualidade (fidelidade x compressao)

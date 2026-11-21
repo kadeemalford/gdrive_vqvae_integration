@@ -1,5 +1,7 @@
 # Progress reports — índice por etapa
 
+**Sínteses:** [Checkpoint 1](PROGRESS_CHECKPOINT_1.md) · [Checkpoint 2 — relatórios 60–79](PROGRESS_CHECKPOINT_2.md) · [Checkpoint 3 — relatórios 80–124](PROGRESS_CHECKPOINT_3.md).
+
 Os relatórios 1–89 não foram alterados. A consolidação inicial reuniu os 32 registros históricos de 90–121 em **13 documentos**; novas etapas foram acrescentadas depois. A numeração atual segue em sequência a partir do 90. Os números dos registros históricos e suas âncoras foram preservados.
 
 | Documento | Registros anteriores | Etapa e conclusão |
@@ -32,6 +34,13 @@ Os relatórios 1–89 não foram alterados. A consolidação inicial reuniu os 3
 | [115 — Tabelas contextuais compartilhadas](115-FEBUS_POOLED_CONTEXT_TABLES.md) | — | Menor instalação, mas mais bytes totais. |
 | [116 — Wire VQ compacto](116-FEBUS_COMPACT_VQ_WIRE_PROTOCOL.md) | — | Economia de 2,9944%, concentrada em dois tiles literais. |
 | [117 — Curva F2 contínua](117-FEBUS_CONTINUOUS_F2_PROBE.md) | — | Economia de 30,38–41,27% no transporte nas precisões primárias; com instalação, o critério conjunto por família/configuração não passou. |
+| [118 — Instalação reversível](118-FEBUS_LOSSLESS_INSTALLATION_ENVELOPE.md) | — | Contraste de empacotamento da instalação congelada, sem modificar CDFs ou sinais. |
+| [119 — Resultado da instalação reversível](119-FEBUS_LOSSLESS_INSTALLATION_RESULTS.md) | — | Ganho agregado de 10,19–32,36%, mas guardas por família/configuração reprovadas, sem F4-A. |
+| [120 — Roteamento decidido no fit](120-FEBUS_FIT_ONLY_INSTALLATION_ROUTING.md) | — | Protocolo de seleção marginal/contextual sem consultar o check, com uma instalação paga. |
+| [121 — Resultado do roteamento fit-only](121-FEBUS_FIT_ONLY_INSTALLATION_ROUTING_RESULTS.md) | — | Economia líquida de 21,75–31,82%, sem regressão material por configuração; não passa como vantagem generalista. |
+| [122 — Confirmação do roteamento](122-FEBUS_ROUTING_CONFIRMATION_PREFLIGHT.md) | — | Política e instalações conferidas e congeladas; aguarda novas sessões documentadas. |
+| [123 — Roteamento em DAS externo](123-EXTERNAL_DAS_ROUTING_EGS.md) | — | Quatro gravações EGS/Terra15: a política ficou no marginal; ganho da diversidade de ajuste inferior a 0,28%. |
+| [124 — Roteamento Utah FORGE](124-EXTERNAL_DAS_ROUTING_FORGE.md) | — | Economia seletiva repetida em três das quatro combinações poço/precisão; totais 4,36% e 15,83%. |
 
 ## Rastreabilidade
 
